@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debit & Credit Ledger</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 font-sans antialiased flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-sm flex items-center justify-center">
+                    <i class="fa-solid fa-wallet text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">LedgerPro</h1>
+                    <p class="text-xs text-slate-500 font-medium">Wallet Debit & Cash-out Tracker</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
+                <!-- Admin Mode Toggle Button -->
+                <button onclick="toggleAdminModal()" id="adminModeBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
+                    <i class="fa-solid fa-lock text-xs text-slate-500" id="adminIcon"></i> <span id="adminBtnText">Viewer Mode</span>
+                </button>
+                <!-- Add Transaction (Admin Only) -->
+                <button id="addTxBtn" onclick="openModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i> Add Transaction
+                </button>
+                <button onclick="exportData()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
+                    <i class="fa-solid fa-download text-xs"></i> Export
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
+
+        <!-- Summary Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Total Debit -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Wallet Debit</p>
+                    <h3 id="cardTotalDebit" class="text-xl font-bold text-emerald-600 mt-1">₱0.00</h3>
+                </div>
+                <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-arrow-trend-up text-base"></i>
+                </div>
+            </div>
+
+            <!-- Total Credit -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Cash-out</p>
+                    <h3 id="cardTotalCredit" class="text-xl font-bold text-rose-600 mt-1">₱0.00</h3>
+                </div>
+                <div class="bg-rose-50 text-rose-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-arrow-trend-down text-base"></i>
+                </div>
+            </div>
+
+            <!-- Total Charges Logged -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Charges Logged</p>
+                    <h3 id="cardTotalCharges" class="text-xl font-bold text-amber-600 mt-1">₱0.00</h3>
+                </div>
+                <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-receipt text-base"></i>
+                </div>
+            </div>
+
+            <!-- Total Charges Gained (Paid Only) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Charges Gained (Paid)</p>
+                    <h3 id="cardChargesGained" class="text-xl font-bold text-teal-600 mt-1">₱0.00</h3>
+                </div>
+                <div class="bg-teal-50 text-teal-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-coins text-base"></i>
+                </div>
+            </div>
+
+            <!-- Net Balance -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Net Balance</p>
+                    <h3 id="cardNetBalance" class="text-xl font-bold text-indigo-600 mt-1">₱0.00</h3>
+                </div>
+                <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
+                    <i class="fa-solid fa-scale-balanced text-base"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar / Filters Section -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Search bar -->
+            <div class="relative w-full md:w-80">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="filterTransactions()" placeholder="Search by name, description or remarks..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+            </div>
+
+            <!-- Filter buttons -->
+            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                <span class="text-xs font-medium text-slate-500 uppercase mr-1 hidden sm:inline">Status:</span>
+                <button onclick="setFilter('all')" id="filterBtnAll" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-2xs transition-all cursor-pointer">All</button>
+                <button onclick="setFilter('paid')" id="filterBtnPaid" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer">Paid</button>
+                <button onclick="setFilter('unpaid')" id="filterBtnUnpaid" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer">Unpaid</button>
+            </div>
+        </div>
+
+        <!-- Transaction Table Section -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3.5 px-4">Date</th>
+                            <th class="py-3.5 px-4">Name / Description</th>
+                            <th class="py-3.5 px-4 text-right">Wallet Debit</th>
+                            <th class="py-3.5 px-4 text-right">Cash-out (Credit)</th>
+                            <th class="py-3.5 px-4 text-right">Transaction Charge</th>
+                            <th class="py-3.5 px-4 text-right">Running Balance</th>
+                            <th id="actionHeaderCol" class="py-3.5 px-4 text-center hidden">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Dynamic rows populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden py-16 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4 text-xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-700">No transactions found</h3>
+                <p class="text-xs text-slate-500 mt-1">Get started by adding your first debit or credit entry.</p>
+                <button id="emptyAddBtn" onclick="openModal()" class="mt-4 hidden inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-plus"></i> Add Transaction
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Transaction Modal (Admin Only) -->
+    <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-300 overflow-hidden" id="modalContainer">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 id="modalTitle" class="text-base font-bold text-slate-900">Add New Transaction</h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="transactionForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <!-- Date -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Date</label>
+                    <input type="date" id="txDate" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- Name / Description -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Name / Description</label>
+                    <input type="text" id="txName" placeholder="e.g. John Doe / Cash-in load" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- Type & Amount -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Transaction Type</label>
+                        <select id="txType" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer">
+                            <option value="debit">Wallet Debit (In)</option>
+                            <option value="credit">Cash-out (Credit/Out)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Amount (₱)</label>
+                        <input type="number" step="0.01" min="0" id="txAmount" placeholder="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                    </div>
+                </div>
+
+                <!-- Transaction Charge & Status -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Transaction Charge (₱)</label>
+                        <input type="number" step="0.01" min="0" id="txCharge" placeholder="0.00" value="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Payment Status</label>
+                        <select id="txStatus" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer">
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Remarks Box (Added right under Transaction Charge) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Remarks</label>
+                    <input type="text" id="txRemarks" placeholder="Optional notes, reference no., or details..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-xs hover:bg-slate-50 transition-all cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all cursor-pointer">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Login / Switch Modal -->
+    <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4 transform scale-95 transition-transform duration-300" id="adminModalContainer">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-sm font-bold text-slate-900" id="adminModalTitle">Administrator Login</h3>
+                <button onclick="closeAdminModal()" class="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+            <div id="adminLoginView" class="space-y-3">
+                <p class="text-xs text-slate-500">Enter administrator PIN or password to unlock editing capabilities.</p>
+                <input type="password" id="adminPasswordInput" placeholder="Enter admin password (default: admin123)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium cursor-pointer">Cancel</button>
+                    <button onclick="verifyAdminPassword()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Login</button>
+                </div>
+            </div>
+            <div id="adminLogoutView" class="hidden space-y-3">
+                <p class="text-xs text-slate-600">You are currently logged in as an <strong>Administrator</strong>.</p>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium cursor-pointer">Close</button>
+                    <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Log Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Box -->
+    <div id="notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium">
+        <i id="notifIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="notifText">Action successful!</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Management
+        let transactions = JSON.parse(localStorage.getItem('ledger_transactions')) || [];
+        let currentFilter = 'all';
+        let isAdmin = localStorage.getItem('ledger_is_admin') === 'true';
+
+        // Initialize App on Load
+        window.addEventListener('DOMContentLoaded', () => {
+            setDefaultDate();
+            updateUIMode();
+            renderTable();
+        });
+
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('txDate').value = today;
+        }
+
+        // Format Currency Helper
+        function formatCurrency(amount) {
+            return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Toggle Admin Modal
+        function toggleAdminModal() {
+            const modal = document.getElementById('adminModal');
+            const container = document.getElementById('adminModalContainer');
+            const loginView = document.getElementById('adminLoginView');
+            const logoutView = document.getElementById('adminLogoutView');
+            const title = document.getElementById('adminModalTitle');
+
+            if (isAdmin) {
+                title.textContent = 'Admin Management';
+                loginView.classList.add('hidden');
+                logoutView.classList.remove('hidden');
+            } else {
+                title.textContent = 'Administrator Login';
+                loginView.classList.remove('hidden');
+                logoutView.classList.add('hidden');
+                document.getElementById('adminPasswordInput').value = '';
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95');
+            container.classList.add('scale-100');
+        }
+
+        function closeAdminModal() {
+            const modal = document.getElementById('adminModal');
+            const container = document.getElementById('adminModalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+        }
+
+        function verifyAdminPassword() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === 'admin123') {
+                isAdmin = true;
+                localStorage.setItem('ledger_is_admin', 'true');
+                closeAdminModal();
+                updateUIMode();
+                renderTable();
+                showNotification('Logged in as Administrator!', 'success');
+            } else {
+                showNotification('Incorrect admin password!', 'error');
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            localStorage.setItem('ledger_is_admin', 'false');
+            closeAdminModal();
+            updateUIMode();
+            renderTable();
+            showNotification('Logged out from Admin mode.', 'info');
+        }
+
+        function updateUIMode() {
+            const addBtn = document.getElementById('addTxBtn');
+            const emptyAddBtn = document.getElementById('emptyAddBtn');
+            const actionHeaderCol = document.getElementById('actionHeaderCol');
+            const adminBtnText = document.getElementById('adminBtnText');
+            const adminIcon = document.getElementById('adminIcon');
+            const adminModeBtn = document.getElementById('adminModeBtn');
+
+            if (isAdmin) {
+                addBtn.classList.remove('hidden');
+                emptyAddBtn.classList.remove('hidden');
+                actionHeaderCol.classList.remove('hidden');
+                adminBtnText.textContent = 'Admin Mode';
+                adminIcon.className = 'fa-solid fa-lock-open text-xs text-indigo-600';
+                adminModeBtn.className = 'bg-indigo-50 border border-indigo-200 text-indigo-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs';
+            } else {
+                addBtn.classList.add('hidden');
+                emptyAddBtn.classList.add('hidden');
+                actionHeaderCol.classList.add('hidden');
+                adminBtnText.textContent = 'Viewer Mode';
+                adminIcon.className = 'fa-solid fa-lock text-xs text-slate-500';
+                adminModeBtn.className = 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs';
+            }
+        }
+
+        // Modal Open / Close Controls for Transactions
+        function openModal(editIdx = -1) {
+            if (!isAdmin) {
+                showNotification('Access denied. Administrator privileges required.', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('transactionModal');
+            const modalContainer = document.getElementById('modalContainer');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            if (editIdx > -1) {
+                modalTitle.textContent = 'Edit Transaction';
+                document.getElementById('editIndex').value = editIdx;
+                const tx = transactions[editIdx];
+                document.getElementById('txDate').value = tx.date;
+                document.getElementById('txName').value = tx.name;
+                document.getElementById('txType').value = tx.type;
+                document.getElementById('txAmount').value = tx.amount;
+                document.getElementById('txCharge').value = tx.charge;
+                document.getElementById('txStatus').value = tx.status;
+                document.getElementById('txRemarks').value = tx.remarks || '';
+            } else {
+                modalTitle.textContent = 'Add New Transaction';
+                document.getElementById('editIndex').value = -1;
+                document.getElementById('transactionForm').reset();
+                setDefaultDate();
+                document.getElementById('txCharge').value = '0.00';
+                document.getElementById('txRemarks').value = '';
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContainer.classList.remove('scale-95');
+            modalContainer.classList.add('scale-100');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('transactionModal');
+            const modalContainer = document.getElementById('modalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContainer.classList.remove('scale-100');
+            modalContainer.classList.add('scale-95');
+        }
+
+        // Form Submit Handler
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+            
+            const newTx = {
+                date: document.getElementById('txDate').value,
+                name: document.getElementById('txName').value.trim(),
+                type: document.getElementById('txType').value,
+                amount: parseFloat(document.getElementById('txAmount').value) || 0,
+                charge: parseFloat(document.getElementById('txCharge').value) || 0,
+                status: document.getElementById('txStatus').value,
+                remarks: document.getElementById('txRemarks').value.trim()
+            };
+
+            if (editIdx > -1) {
+                transactions[editIdx] = newTx;
+                showNotification('Transaction updated successfully!', 'success');
+            } else {
+                transactions.push(newTx);
+                showNotification('Transaction added successfully!', 'success');
+            }
+
+            saveAndRender();
+            closeModal();
+        }
+
+        // Delete Transaction
+        function deleteTransaction(index) {
+            if (!isAdmin) {
+                showNotification('Access denied. Administrator privileges required.', 'error');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete this transaction?')) {
+                transactions.splice(index, 1);
+                saveAndRender();
+                showNotification('Transaction deleted!', 'info');
+            }
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('ledger_transactions', JSON.stringify(transactions));
+            renderTable();
+        }
+
+        function setFilter(status) {
+            currentFilter = status;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById(`filterBtn${status.charAt(0).toUpperCase() + status.slice(1)}`);
+            activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
+            activeBtn.classList.add('bg-indigo-600', 'text-white');
+            renderTable();
+        }
+
+        function filterTransactions() {
+            renderTable();
+        }
+
+        // Render Ledger Table & Cards
+        function renderTable() {
+            const tbody = document.getElementById('ledgerTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+
+            tbody.innerHTML = '';
+
+            let totalDebit = 0;
+            let totalCredit = 0;
+            let totalCharges = 0;
+            let chargesGained = 0;
+            let currentBalanceTracker = 0;
+
+            let calculatedRows = [];
+
+            transactions.forEach((tx, idx) => {
+                const debitVal = tx.type === 'debit' ? tx.amount : 0;
+                const creditVal = tx.type === 'credit' ? tx.amount : 0;
+                
+                totalDebit += debitVal;
+                totalCredit += creditVal;
+                totalCharges += tx.charge;
+
+                let effectiveChargeForBalance = (tx.status === 'paid') ? tx.charge : 0;
+                if (tx.status === 'paid') {
+                    chargesGained += tx.charge;
+                }
+
+                currentBalanceTracker += (debitVal - creditVal + effectiveChargeForBalance);
+
+                calculatedRows.push({
+                    originalIndex: idx,
+                    ...tx,
+                    debitVal,
+                    creditVal,
+                    runningBalance: currentBalanceTracker
+                });
+            });
+
+            // Update Summary Cards
+            document.getElementById('cardTotalDebit').textContent = formatCurrency(totalDebit);
+            document.getElementById('cardTotalCredit').textContent = formatCurrency(totalCredit);
+            document.getElementById('cardTotalCharges').textContent = formatCurrency(totalCharges);
+            document.getElementById('cardChargesGained').textContent = formatCurrency(chargesGained);
+            
+            const netBalanceEl = document.getElementById('cardNetBalance');
+            netBalanceEl.textContent = formatCurrency(currentBalanceTracker);
+            netBalanceEl.className = `text-xl font-bold mt-1 ${currentBalanceTracker >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
+
+            const filteredRows = calculatedRows.filter(row => {
+                const matchesSearch = row.name.toLowerCase().includes(searchQuery) || (row.remarks && row.remarks.toLowerCase().includes(searchQuery));
+                const matchesStatus = currentFilter === 'all' || row.status === currentFilter;
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filteredRows.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Build table rows
+            filteredRows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/75 transition-colors';
+
+                const statusBadge = row.status === 'paid' 
+                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">Paid</span>`
+                    : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">Unpaid</span>`;
+
+                const remarksHtml = row.remarks ? `<p class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-note-sticky text-[10px] mr-1 text-slate-400"></i>${escapeHtml(row.remarks)}</p>` : '';
+
+                let actionTdHtml = '';
+                if (isAdmin) {
+                    actionTdHtml = `
+                        <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openModal(${row.originalIndex})" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-all flex items-center justify-center cursor-pointer" title="Edit">
+                                    <i class="fa-solid fa-pen text-xs"></i>
+                                </button>
+                                <button onclick="deleteTransaction(${row.originalIndex})" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition-all flex items-center justify-center cursor-pointer" title="Delete">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 text-xs font-medium text-slate-600 whitespace-nowrap">${row.date}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-slate-800">${escapeHtml(row.name)}</span>
+                            ${statusBadge}
+                        </div>
+                        ${remarksHtml}
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-semibold text-emerald-600 whitespace-nowrap">
+                        ${row.debitVal > 0 ? formatCurrency(row.debitVal) : '-'}
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-semibold text-rose-600 whitespace-nowrap">
+                        ${row.creditVal > 0 ? formatCurrency(row.creditVal) : '-'}
+                    </td>
+                    <td class="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">
+                        ${row.charge > 0 ? formatCurrency(row.charge) : '₱0.00'}
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-bold ${row.runningBalance >= 0 ? 'text-slate-900' : 'text-rose-600'} whitespace-nowrap">
+                        ${formatCurrency(row.runningBalance)}
+                    </td>
+                    ${actionTdHtml}
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Export Data to CSV
+        function exportData() {
+            if (transactions.length === 0) {
+                showNotification('No data available to export!', 'error');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Date,Name,Type,Amount,Charge,Status,Remarks\n";
+            transactions.forEach(tx => {
+                const remarks = tx.remarks ? tx.remarks.replace(/"/g, '""') : '';
+                csvContent += `"${tx.date}","${tx.name}","${tx.type}",${tx.amount},${tx.charge},"${tx.status}","${remarks}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `ledger_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification('Ledger exported as CSV!', 'success');
+        }
+
+        // Notification Helper
+        function showNotification(message, type = 'success') {
+            const notif = document.getElementById('notification');
+            const notifText = document.getElementById('notifText');
+            const notifIcon = document.getElementById('notifIcon');
+
+            notifText.textContent = message;
+            if (type === 'success') {
+                notifIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            } else {
+                notifIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+            }
+
+            notif.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                notif.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
