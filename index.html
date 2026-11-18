@@ -3,205 +3,590 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debit & Credit Ledger</title>
+    <title>LedgerPro — Analytics & Cash-Flow Ledger</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans, Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js for Interactive Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -4px rgba(15, 23, 42, 0.03)',
+                        'glow': '0 10px 30px -5px rgba(79, 70, 229, 0.18)',
                     }
                 }
             }
         }
     </script>
+
     <style>
+        /* Custom Animations & Keyframes */
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes rowEnter {
+            from {
+                opacity: 0;
+                transform: translateX(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            70% { transform: scale(1.4); opacity: 0; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+
+        .animate-card {
+            opacity: 0;
+            animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-row {
+            opacity: 0;
+            animation: rowEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .stagger-1 { animation-delay: 0.04s; }
+        .stagger-2 { animation-delay: 0.08s; }
+        .stagger-3 { animation-delay: 0.12s; }
+        .stagger-4 { animation-delay: 0.16s; }
+        .stagger-5 { animation-delay: 0.20s; }
+        .stagger-6 { animation-delay: 0.24s; }
+
+        .admin-pulse::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: currentColor;
+            animation: pulseRing 2s infinite;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Ambient Background Mesh */
+        .ambient-bg {
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+        }
+        .dark .ambient-bg {
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.14) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.6);
+        }
+
+        /* Smooth Analytics Collapse */
+        .analytics-collapse {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+        .analytics-collapse.collapsed {
+            grid-template-rows: 0fr;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .analytics-collapse > div {
+            overflow: hidden;
+        }
+
         @media print {
             .no-print {
                 display: none !important;
             }
             body {
                 background: white !important;
+                color: #0f172a !important;
             }
             main {
                 padding: 0 !important;
                 max-width: 100% !important;
             }
-            .shadow-2xs, .shadow-xs, .border {
+            .shadow-soft, .shadow-sm, .border {
                 box-shadow: none !important;
                 border-color: #cbd5e1 !important;
+            }
+            .animate-card, .animate-row {
+                opacity: 1 !important;
+                animation: none !important;
+                transform: none !important;
             }
         }
     </style>
 </head>
-<body class="h-full bg-slate-50 text-slate-800 font-sans antialiased flex flex-col">
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased flex flex-col ambient-bg transition-colors duration-300">
 
-    <!-- Header Section -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-sm flex items-center justify-center">
-                    <i class="fa-solid fa-wallet text-xl"></i>
+    <!-- Glassmorphic Sticky Header -->
+    <header class="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-300 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <!-- Brand Identity -->
+            <div class="flex items-center space-x-3.5 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="relative bg-gradient-to-br from-indigo-600 to-violet-600 text-white p-2.5 rounded-xl shadow-glow flex items-center justify-center group transition-transform duration-300 hover:scale-105">
+                        <i class="fa-solid fa-wallet text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-display font-extrabold text-slate-900 dark:text-white tracking-tight">LedgerPro</h1>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">Analytics</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Wallet Debit, Cash-Out & Fee Intelligence</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">LedgerPro</h1>
-                    <p class="text-xs text-slate-500 font-medium">Wallet Debit & Cash-out Tracker</p>
-                </div>
+
+                <!-- Mobile Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="sm:hidden w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer" title="Toggle Theme">
+                    <i id="themeIconMobile" class="fa-solid fa-moon text-xs"></i>
+                </button>
             </div>
-            <div class="flex items-center gap-3 w-full sm:w-auto justify-end flex-wrap">
-                <!-- Admin Mode Toggle Button -->
-                <button onclick="toggleAdminModal()" id="adminModeBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
-                    <i class="fa-solid fa-lock text-xs text-slate-500" id="adminIcon"></i> <span id="adminBtnText">Viewer Mode</span>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <!-- Dark Mode Toggle (Desktop) -->
+                <button onclick="toggleDarkMode()" class="hidden sm:flex w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 items-center justify-center transition-all active:scale-95 cursor-pointer" title="Toggle Dark Mode">
+                    <i id="themeIconDesktop" class="fa-solid fa-moon text-xs"></i>
                 </button>
+
+                <!-- Toggle Analytics Panel -->
+                <button onclick="toggleAnalyticsSection()" id="toggleAnalyticsBtn" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-chart-pie text-indigo-500 text-xs"></i>
+                    <span id="toggleAnalyticsText">Hide Analytics</span>
+                </button>
+
+                <!-- Admin Mode Toggle -->
+                <button onclick="toggleAdminModal()" id="adminModeBtn" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <span class="relative flex h-2 w-2">
+                        <span id="adminDot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                    </span>
+                    <i class="fa-solid fa-lock text-xs text-slate-500" id="adminIcon"></i>
+                    <span id="adminBtnText">Viewer Mode</span>
+                </button>
+
                 <!-- Add Transaction (Admin Only) -->
-                <button id="addTxBtn" onclick="openModal()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-plus text-xs"></i> Add Transaction
+                <button id="addTxBtn" onclick="openModal()" class="hidden bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-xl font-semibold text-xs shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i> Add Entry
                 </button>
-                <!-- Print Report Button (Admin Only) -->
-                <button id="printReportBtn" onclick="printReport()" class="hidden bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
-                    <i class="fa-solid fa-print text-xs"></i> Print Report
+
+                <!-- Print Report (Admin Only) -->
+                <button id="printReportBtn" onclick="printReport()" class="hidden bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-print text-xs"></i> Print
                 </button>
-                <button onclick="exportData()" class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs">
-                    <i class="fa-solid fa-download text-xs"></i> Export
+
+                <!-- Export CSV -->
+                <button onclick="exportData()" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-file-csv text-xs text-emerald-600"></i> Export
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 flex-1 w-full space-y-6">
 
         <!-- Print Header Title (Only visible when printing) -->
-        <div class="hidden print:block mb-6">
-            <h1 class="text-2xl font-bold text-slate-900">LedgerPro Report</h1>
-            <p class="text-xs text-slate-500">Generated on <span id="printDate"></span></p>
+        <div class="hidden print:block mb-6 border-b border-slate-300 pb-4">
+            <h1 class="text-2xl font-bold text-slate-900">LedgerPro Financial & Cash-Flow Report</h1>
+            <p class="text-xs text-slate-500 mt-1">Generated on <span id="printDate"></span></p>
         </div>
 
-        <!-- Summary Cards Grid -->
+        <!-- Live Smart Insights Banner -->
+        <div id="insightsBanner" class="animate-card stagger-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 no-print">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                </div>
+                <div class="text-xs text-slate-600 dark:text-slate-300" id="smartInsightText">
+                    Add transactions or load sample data to unlock real-time cash-flow insights.
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="loadSampleData()" id="sampleDataBtn" class="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:hover:bg-indigo-900/70 text-indigo-600 dark:text-indigo-400 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-database mr-1"></i> Load Demo Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Enhanced KPI Summary Cards Grid (5 Cards) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- Total Debit -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Wallet Debit</p>
-                    <h3 id="cardTotalDebit" class="text-xl font-bold text-emerald-600 mt-1">₱0.00</h3>
+            <!-- 1. Total Wallet Debit -->
+            <div class="animate-card stagger-1 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Wallet Debit (In)</p>
+                        <h3 id="cardTotalDebit" class="text-xl font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1.5 tabular-nums">₱0.00</h3>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+                    </div>
                 </div>
-                <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl">
-                    <i class="fa-solid fa-arrow-trend-up text-base"></i>
-                </div>
-            </div>
-
-            <!-- Total Credit -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Cash-out</p>
-                    <h3 id="cardTotalCredit" class="text-xl font-bold text-rose-600 mt-1">₱0.00</h3>
-                </div>
-                <div class="bg-rose-50 text-rose-600 p-3 rounded-xl">
-                    <i class="fa-solid fa-arrow-trend-down text-base"></i>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span id="debitCountLabel">0 entries</span>
+                    <span id="debitShareLabel" class="font-semibold text-emerald-600 dark:text-emerald-400">0% vol</span>
                 </div>
             </div>
 
-            <!-- Total Charges Logged -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Charges Logged</p>
-                    <h3 id="cardTotalCharges" class="text-xl font-bold text-amber-600 mt-1">₱0.00</h3>
+            <!-- 2. Total Cash-out -->
+            <div class="animate-card stagger-2 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-400 to-pink-500"></div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Cash-Out (Out)</p>
+                        <h3 id="cardTotalCredit" class="text-xl font-mono font-bold text-rose-600 dark:text-rose-400 mt-1.5 tabular-nums">₱0.00</h3>
+                    </div>
+                    <div class="bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-arrow-trend-down text-sm"></i>
+                    </div>
                 </div>
-                <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
-                    <i class="fa-solid fa-receipt text-base"></i>
-                </div>
-            </div>
-
-            <!-- Total Charges Gained (Paid Only) -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Charges Gained (Paid)</p>
-                    <h3 id="cardChargesGained" class="text-xl font-bold text-teal-600 mt-1">₱0.00</h3>
-                </div>
-                <div class="bg-teal-50 text-teal-600 p-3 rounded-xl">
-                    <i class="fa-solid fa-coins text-base"></i>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span id="creditCountLabel">0 entries</span>
+                    <span>Unpaid: <strong id="unpaidCreditOnlyLabel" class="font-mono text-amber-600 dark:text-amber-400">₱0.00</strong></span>
                 </div>
             </div>
 
-            <!-- Net Balance -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Net Balance</p>
-                    <h3 id="cardNetBalance" class="text-xl font-bold text-indigo-600 mt-1">₱0.00</h3>
+            <!-- 3. Total Charges Logged & Unpaid (Credit + Charge) -->
+            <div class="animate-card stagger-3 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Charges Logged</p>
+                        <h3 id="cardTotalCharges" class="text-xl font-mono font-bold text-amber-600 dark:text-amber-400 mt-1.5 tabular-nums">₱0.00</h3>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-receipt text-sm"></i>
+                    </div>
                 </div>
-                <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
-                    <i class="fa-solid fa-scale-balanced text-base"></i>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span title="Includes unpaid credited amounts + unpaid charges">Unpaid (Cr+Fee):</span>
+                    <span id="unpaidTotalLabel" class="font-mono font-semibold text-amber-600 dark:text-amber-400">₱0.00</span>
+                </div>
+            </div>
+
+            <!-- 4. Charges Gained (Paid) + Collection Rate -->
+            <div class="animate-card stagger-4 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-400 to-cyan-500"></div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Charges Gained</p>
+                        <h3 id="cardChargesGained" class="text-xl font-mono font-bold text-teal-600 dark:text-teal-400 mt-1.5 tabular-nums">₱0.00</h3>
+                    </div>
+                    <div class="bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-coins text-sm"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <div class="flex items-center justify-between text-[11px] mb-1">
+                        <span class="text-slate-500 dark:text-slate-400">Fee Collection</span>
+                        <span id="collectionRateLabel" class="font-bold text-teal-600 dark:text-teal-400">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div id="collectionProgressBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-700" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Net Balance & Balance Incl. Unpaid -->
+            <div class="animate-card stagger-5 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-600"></div>
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Net Balance</p>
+                        <h3 id="cardNetBalance" class="text-xl font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1.5 tabular-nums">₱0.00</h3>
+                    </div>
+                    <div class="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 p-2.5 rounded-xl group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-scale-balanced text-sm"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span title="Net Balance + Unpaid Credit & Charges">Incl. Unpaid:</span>
+                    <span id="projectedBalanceLabel" class="font-mono font-semibold text-indigo-600 dark:text-indigo-400">₱0.00</span>
                 </div>
             </div>
         </div>
 
-        <!-- Toolbar / Filters Section -->
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row justify-between items-center gap-4 no-print">
-            <!-- Search bar -->
-            <div class="relative w-full md:w-80">
+        <!-- Collapsible Analytics Suite -->
+        <section id="analyticsSection" class="analytics-collapse no-print">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <!-- Chart 1: Cash Flow & Running Balance Trajectory (7 Cols) -->
+                    <div class="animate-card stagger-3 lg:col-span-7 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-col justify-between">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-area text-indigo-500"></i>
+                                    Cash-Flow & Running Balance Trend
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Daily inflows, outflows, and cumulative balance trajectory</p>
+                            </div>
+                            <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start">
+                                <button onclick="setChartGranularity('daily')" id="granDailyBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition-all cursor-pointer">Daily</button>
+                                <button onclick="setChartGranularity('monthly')" id="granMonthlyBtn" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 transition-all cursor-pointer">Monthly</button>
+                            </div>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="cashFlowChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Volume & Fee Composition Doughnut (5 Cols) -->
+                    <div class="animate-card stagger-4 lg:col-span-5 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-col justify-between">
+                        <div class="mb-3">
+                            <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie text-teal-500"></i>
+                                Volume & Unpaid Distribution
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Proportional breakdown including unpaid credit & fees</p>
+                        </div>
+                        <div class="relative h-52 w-full flex items-center justify-center">
+                            <canvas id="distributionChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Volume</span>
+                                <span id="doughnutTotalLabel" class="text-sm font-mono font-bold text-slate-800 dark:text-white tabular-nums">₱0.00</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                            <div class="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60">
+                                <span class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Debit Ratio</span>
+                                <span id="debitRatioStat" class="font-mono font-semibold text-slate-800 dark:text-slate-200">0%</span>
+                            </div>
+                            <div class="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60">
+                                <span class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Outflow Ratio</span>
+                                <span id="creditRatioStat" class="font-mono font-semibold text-slate-800 dark:text-slate-200">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Analytics Row: Top Accounts & Key Extremes -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <!-- Top Accounts / Names Leaderboard (7 Cols) -->
+                    <div class="animate-card stagger-5 lg:col-span-7 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft">
+                        <div class="flex items-center justify-between mb-3.5">
+                            <div>
+                                <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-ranking-star text-amber-500"></i>
+                                    Top Accounts by Transaction Volume
+                                </h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Most active counterparties, fee revenue & unpaid balances</p>
+                            </div>
+                            <span class="text-[11px] font-medium text-slate-400" id="uniqueEntitiesCount">0 unique names</span>
+                        </div>
+                        <div id="topAccountsList" class="space-y-3">
+                            <p class="text-xs text-slate-400 py-6 text-center">No account activity recorded yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Ledger Extremes & Liquidity Pulse (5 Cols) -->
+                    <div class="animate-card stagger-6 lg:col-span-5 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-sm font-display font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3.5">
+                                <i class="fa-solid fa-gauge-high text-violet-500"></i>
+                                Ledger Benchmarks & Extremes
+                            </h2>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Largest Debit In</p>
+                                    <p id="statMaxDebit" class="text-sm font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">₱0.00</p>
+                                    <p id="statMaxDebitName" class="text-[11px] text-slate-500 truncate mt-0.5">—</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Largest Cash-Out</p>
+                                    <p id="statMaxCredit" class="text-sm font-mono font-bold text-rose-600 dark:text-rose-400 mt-1 tabular-nums">₱0.00</p>
+                                    <p id="statMaxCreditName" class="text-[11px] text-slate-500 truncate mt-0.5">—</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Peak Balance</p>
+                                    <p id="statPeakBalance" class="text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1 tabular-nums">₱0.00</p>
+                                    <p id="statPeakDate" class="text-[11px] text-slate-500 truncate mt-0.5">—</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Highest Unpaid Due</p>
+                                    <p id="statMaxUnpaid" class="text-sm font-mono font-bold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">₱0.00</p>
+                                    <p id="statMaxUnpaidName" class="text-[11px] text-slate-500 truncate mt-0.5">—</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Liquidity Health Bar -->
+                        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center justify-between text-xs mb-1.5">
+                                <span class="font-medium text-slate-600 dark:text-slate-300">Inflow vs. Outflow Coverage</span>
+                                <span id="coverageRatioLabel" class="font-mono font-bold text-indigo-600 dark:text-indigo-400">0.00x</span>
+                            </div>
+                            <div class="w-full h-2 bg-rose-100 dark:bg-rose-950 rounded-full overflow-hidden flex">
+                                <div id="inflowCoverageBar" class="h-full bg-emerald-500 transition-all duration-700" style="width: 50%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Advanced Filter & Search Toolbar -->
+        <div class="animate-card stagger-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3.5 no-print">
+            <!-- Search Input -->
+            <div class="relative flex-1 max-w-md">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
                 </span>
-                <input type="text" id="searchInput" oninput="filterTransactions()" placeholder="Search by name, description or remarks..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                <input type="text" id="searchInput" oninput="filterTransactions()" placeholder="Search name, description, or remarks..." class="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition-all">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <i class="fa-solid fa-circle-xmark text-xs"></i>
+                </button>
             </div>
 
-            <!-- Filter buttons -->
-            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                <span class="text-xs font-medium text-slate-500 uppercase mr-1 hidden sm:inline">Status:</span>
-                <button onclick="setFilter('all')" id="filterBtnAll" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-2xs transition-all cursor-pointer">All</button>
-                <button onclick="setFilter('paid')" id="filterBtnPaid" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer">Paid</button>
-                <button onclick="setFilter('unpaid')" id="filterBtnUnpaid" class="filter-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all cursor-pointer">Unpaid</button>
+            <!-- Filter Controls Group -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Type Filter -->
+                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                    <button onclick="setTypeFilter('all')" id="typeBtnAll" class="type-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-2xs transition-all cursor-pointer">All Types</button>
+                    <button onclick="setTypeFilter('debit')" id="typeBtnDebit" class="type-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 transition-all cursor-pointer">Debit In</button>
+                    <button onclick="setTypeFilter('credit')" id="typeBtnCredit" class="type-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-rose-600 transition-all cursor-pointer">Cash-Out</button>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                    <button onclick="setFilter('all')" id="filterBtnAll" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-2xs transition-all cursor-pointer">All</button>
+                    <button onclick="setFilter('paid')" id="filterBtnPaid" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Paid</button>
+                    <button onclick="setFilter('unpaid')" id="filterBtnUnpaid" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Unpaid</button>
+                </div>
+
+                <!-- Month Filter -->
+                <select id="monthFilter" onchange="filterTransactions()" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                    <option value="all">All Months</option>
+                </select>
+
+                <!-- Sort Order Toggle -->
+                <button onclick="toggleSortOrder()" id="sortOrderBtn" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer" title="Toggle Chronological Sort">
+                    <i id="sortIcon" class="fa-solid fa-arrow-down-short-wide text-indigo-500"></i>
+                    <span id="sortLabel">Oldest First</span>
+                </button>
             </div>
         </div>
 
-        <!-- Transaction Table Section -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <!-- Transaction Ledger Table Section -->
+        <div class="animate-card stagger-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft overflow-hidden">
+            <!-- Table Meta Header -->
+            <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 no-print">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-display font-bold text-slate-700 dark:text-slate-200">Transaction Ledger</span>
+                    <span id="visibleCountBadge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">0 records</span>
+                </div>
+                <div class="text-[11px] text-slate-400 hidden sm:block">
+                    Running balance tracks wallet cash flow; Cash on Hand tracks paid entries + charges (excluding wallet balance)
+                </div>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                        <tr class="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider">
                             <th class="py-3.5 px-4">Date</th>
                             <th class="py-3.5 px-4">Name / Description</th>
                             <th class="py-3.5 px-4 text-right">Wallet Debit</th>
-                            <th class="py-3.5 px-4 text-right">Cash-out (Credit)</th>
-                            <th class="py-3.5 px-4 text-right">Transaction Charge</th>
+                            <th class="py-3.5 px-4 text-right">Cash-Out (Credit)</th>
+                            <th class="py-3.5 px-4 text-right">Charge</th>
+                            <th class="py-3.5 px-4 text-right">Unpaid (Credit + Charge)</th>
                             <th class="py-3.5 px-4 text-right">Running Balance</th>
+                            <th class="py-3.5 px-4 text-right">Cash on Hand</th>
                             <th id="actionHeaderCol" class="py-3.5 px-4 text-center hidden no-print">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="ledgerTableBody" class="divide-y divide-slate-100 text-sm">
+                    <tbody id="ledgerTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
                         <!-- Dynamic rows populated via JS -->
                     </tbody>
+                    <!-- Filtered Subtotal Footer -->
+                    <tfoot id="ledgerTableFooter" class="hidden bg-slate-50/90 dark:bg-slate-800/60 border-t-2 border-slate-200 dark:border-slate-700 text-xs font-bold">
+                        <tr>
+                            <td colspan="2" class="py-3 px-4 text-slate-600 dark:text-slate-300 uppercase tracking-wider">Filtered Totals</td>
+                            <td id="footTotalDebit" class="py-3 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">₱0.00</td>
+                            <td id="footTotalCredit" class="py-3 px-4 text-right font-mono text-rose-600 dark:text-rose-400 tabular-nums">₱0.00</td>
+                            <td id="footTotalCharges" class="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300 tabular-nums">₱0.00</td>
+                            <td id="footTotalUnpaid" class="py-3 px-4 text-right font-mono text-amber-600 dark:text-amber-400 tabular-nums">₱0.00</td>
+                            <td id="footNetFlow" class="py-3 px-4 text-right font-mono text-indigo-600 dark:text-indigo-400 tabular-nums">₱0.00</td>
+                            <td id="footCashOnHand" class="py-3 px-4 text-right font-mono text-teal-600 dark:text-teal-400 tabular-nums">₱0.00</td>
+                            <td id="footActionSpacer" class="hidden no-print"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
             <!-- Empty State -->
-            <div id="emptyState" class="hidden py-16 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4 text-xl">
+            <div id="emptyState" class="hidden py-16 px-4 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-500 mb-4 text-2xl shadow-2xs">
                     <i class="fa-solid fa-folder-open"></i>
                 </div>
-                <h3 class="text-base font-semibold text-slate-700">No transactions found</h3>
-                <p class="text-xs text-slate-500 mt-1">Get started by adding your first debit or credit entry.</p>
-                <button id="emptyAddBtn" onclick="openModal()" class="mt-4 hidden inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-plus"></i> Add Transaction
-                </button>
+                <h3 class="text-base font-display font-bold text-slate-800 dark:text-slate-100">No transactions found</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Add a new debit/cash-out record in Admin Mode or load sample data to explore the analytics dashboard.</p>
+                <div class="mt-5 flex items-center justify-center gap-2.5 flex-wrap">
+                    <button id="emptyAddBtn" onclick="openModal()" class="hidden inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-plus"></i> Add Transaction
+                    </button>
+                    <button onclick="loadSampleData()" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i> Populate Sample Ledger
+                    </button>
+                </div>
             </div>
         </div>
     </main>
 
     <!-- Add/Edit Transaction Modal (Admin Only) -->
-    <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white w-full max-w-lg mx-4 rounded-3xl shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-300 overflow-hidden" id="modalContainer">
+    <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg mx-4 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 transform scale-95 translate-y-4 transition-all duration-300 overflow-hidden" id="modalContainer">
             <!-- Modal Header -->
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 id="modalTitle" class="text-base font-bold text-slate-900">Add New Transaction</h3>
-                <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all cursor-pointer">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/70 dark:bg-slate-800/50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <i class="fa-solid fa-receipt text-xs"></i>
+                    </div>
+                    <h3 id="modalTitle" class="text-base font-display font-bold text-slate-900 dark:text-white">Add New Transaction</h3>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>
@@ -212,40 +597,47 @@
 
                 <!-- Date -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Date</label>
-                    <input type="date" id="txDate" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Date</label>
+                    <input type="date" id="txDate" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
 
                 <!-- Name / Description -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Name / Description</label>
-                    <input type="text" id="txName" placeholder="e.g. John Doe / Cash-in load" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Name / Description</label>
+                    <input type="text" id="txName" list="existingNamesList" placeholder="e.g. John Doe / GCash Cash-in" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    <datalist id="existingNamesList"></datalist>
                 </div>
 
                 <!-- Type & Amount -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Transaction Type</label>
-                        <select id="txType" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Transaction Type</label>
+                        <select id="txType" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                             <option value="debit">Wallet Debit (In)</option>
                             <option value="credit">Cash-out (Credit/Out)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Amount (₱)</label>
-                        <input type="number" step="0.01" min="0" id="txAmount" placeholder="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Amount (₱)</label>
+                        <input type="number" step="0.01" min="0" id="txAmount" oninput="handleAmountInput()" placeholder="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                     </div>
                 </div>
 
                 <!-- Transaction Charge & Status -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Transaction Charge (₱)</label>
-                        <input type="number" step="0.01" min="0" id="txCharge" placeholder="0.00" value="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="txCharge" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Transaction Charge (₱)</label>
+                            <button type="button" id="chargeModeToggleBtn" onclick="toggleChargeMode()" title="Click to toggle between Auto Range (₱5 per ₱250) and Manual charge entry" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i>
+                                <span>Auto Range</span>
+                            </button>
+                        </div>
+                        <input type="number" step="0.01" min="0" id="txCharge" oninput="handleManualChargeInput()" placeholder="0.00" value="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Payment Status</label>
-                        <select id="txStatus" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all cursor-pointer">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Payment Status</label>
+                        <select id="txStatus" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                             <option value="paid">Paid</option>
                             <option value="unpaid">Unpaid</option>
                         </select>
@@ -254,78 +646,163 @@
 
                 <!-- Remarks Box -->
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Remarks</label>
-                    <input type="text" id="txRemarks" placeholder="Optional notes, reference no., or details..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Remarks</label>
+                    <input type="text" id="txRemarks" placeholder="Optional notes, reference no., or details..." class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-xs hover:bg-slate-50 transition-all cursor-pointer">Cancel</button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-sm transition-all cursor-pointer">Save Transaction</button>
+                <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-glow transition-all active:scale-95 cursor-pointer">Save Transaction</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Admin Login / Switch Modal -->
-    <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4 transform scale-95 transition-transform duration-300" id="adminModalContainer">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-sm font-bold text-slate-900" id="adminModalTitle">Administrator Login</h3>
-                <button onclick="closeAdminModal()" class="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer">
+    <!-- Admin Login / Management Modal -->
+    <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 transform scale-95 translate-y-4 transition-all duration-300" id="adminModalContainer">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white" id="adminModalTitle">Administrator Login</h3>
+                <button onclick="closeAdminModal()" class="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
             <div id="adminLoginView" class="space-y-3">
-                <p class="text-xs text-slate-500">Enter administrator PIN or password to unlock editing capabilities.</p>
-                <input type="password" id="adminPasswordInput" placeholder="Enter admin password (default: admin123)" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Enter administrator password to unlock adding, editing, and status toggling.</p>
+                <input type="password" id="adminPasswordInput" onkeydown="if(event.key==='Enter') verifyAdminPassword()" placeholder="Enter admin password (default: admin123)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium cursor-pointer">Cancel</button>
-                    <button onclick="verifyAdminPassword()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Login</button>
+                    <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer">Cancel</button>
+                    <button onclick="verifyAdminPassword()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Unlock Admin</button>
                 </div>
             </div>
             <div id="adminLogoutView" class="hidden space-y-3">
-                <p class="text-xs text-slate-600">You are currently logged in as an <strong>Administrator</strong>.</p>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium cursor-pointer">Close</button>
-                    <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Log Out</button>
+                <p class="text-xs text-slate-600 dark:text-slate-300">You are currently authenticated as an <strong>Administrator</strong>. You can edit entries or click any status badge or quick Paid button to settle entries.</p>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button onclick="clearAllTransactions()" class="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-semibold cursor-pointer">Clear Ledger</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer">Close</button>
+                        <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Log Out</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Notification Box -->
-    <div id="notification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium no-print">
-        <i id="notifIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <!-- Animated Toast Notification -->
+    <div id="notification" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/60 flex items-center gap-3 text-xs font-medium no-print">
+        <i id="notifIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
         <span id="notifText">Action successful!</span>
     </div>
 
-    <!-- JavaScript Application Logic -->
+    <!-- JavaScript Application & Analytics Engine -->
     <script>
-        // State Management
+        // Core State
         let transactions = JSON.parse(localStorage.getItem('ledger_transactions')) || [];
         let currentFilter = 'all';
+        let currentTypeFilter = 'all';
+        let sortAscending = true;
+        let chartGranularity = 'daily';
+        let analyticsVisible = true;
+        let isAutoCharge = true;
         let isAdmin = localStorage.getItem('ledger_is_admin') === 'true';
 
-        // Initialize App on Load
+        // Chart.js Instances
+        let cashFlowChartInstance = null;
+        let distributionChartInstance = null;
+
+        // Track previous KPI values for smooth count-up animations
+        const prevKpiValues = {
+            debit: 0,
+            credit: 0,
+            charges: 0,
+            gained: 0,
+            net: 0
+        };
+
+        // Initialize Application
         window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             setDefaultDate();
             updateUIMode();
-            renderTable();
-            document.getElementById('printDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            refreshAll();
+            document.getElementById('printDate').textContent = new Date().toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
         });
 
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('ledger_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                updateThemeIcons(true);
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('ledger_theme', isDark ? 'dark' : 'light');
+            updateThemeIcons(isDark);
+            refreshAll();
+        }
+
+        function updateThemeIcons(isDark) {
+            const iconClass = isDark ? 'fa-solid fa-sun text-amber-400 text-xs' : 'fa-solid fa-moon text-xs';
+            document.getElementById('themeIconDesktop').className = iconClass;
+            document.getElementById('themeIconMobile').className = iconClass;
+        }
+
+        function toggleAnalyticsSection() {
+            analyticsVisible = !analyticsVisible;
+            const section = document.getElementById('analyticsSection');
+            const label = document.getElementById('toggleAnalyticsText');
+            if (analyticsVisible) {
+                section.classList.remove('collapsed');
+                label.textContent = 'Hide Analytics';
+            } else {
+                section.classList.add('collapsed');
+                label.textContent = 'Show Analytics';
+            }
+        }
+
         function setDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('txDate').value = today;
+            document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
         }
 
-        // Format Currency Helper
         function formatCurrency(amount) {
-            return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const sign = amount < 0 ? '-' : '';
+            return sign + '₱' + Math.abs(Number(amount)).toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
-        // Toggle Admin Modal
+        // Smooth Animated Number Counter
+        function animateValue(elementId, start, end, duration = 600) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (Math.abs(end - start) < 0.01) {
+                el.textContent = formatCurrency(end);
+                return;
+            }
+            const startTime = performance.now();
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 4);
+                const current = start + (end - start) * ease;
+                el.textContent = formatCurrency(current);
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    el.textContent = formatCurrency(end);
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
+        // Admin Authentication Controls
         function toggleAdminModal() {
             const modal = document.getElementById('adminModal');
             const container = document.getElementById('adminModalContainer');
@@ -334,7 +811,7 @@
             const title = document.getElementById('adminModalTitle');
 
             if (isAdmin) {
-                title.textContent = 'Admin Management';
+                title.textContent = 'Administrator Controls';
                 loginView.classList.add('hidden');
                 logoutView.classList.remove('hidden');
             } else {
@@ -342,19 +819,20 @@
                 loginView.classList.remove('hidden');
                 logoutView.classList.add('hidden');
                 document.getElementById('adminPasswordInput').value = '';
+                setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
             }
 
             modal.classList.remove('opacity-0', 'pointer-events-none');
-            container.classList.remove('scale-95');
-            container.classList.add('scale-100');
+            container.classList.remove('scale-95', 'translate-y-4');
+            container.classList.add('scale-100', 'translate-y-0');
         }
 
         function closeAdminModal() {
             const modal = document.getElementById('adminModal');
             const container = document.getElementById('adminModalContainer');
             modal.classList.add('opacity-0', 'pointer-events-none');
-            container.classList.remove('scale-100');
-            container.classList.add('scale-95');
+            container.classList.remove('scale-100', 'translate-y-0');
+            container.classList.add('scale-95', 'translate-y-4');
         }
 
         function verifyAdminPassword() {
@@ -364,8 +842,8 @@
                 localStorage.setItem('ledger_is_admin', 'true');
                 closeAdminModal();
                 updateUIMode();
-                renderTable();
-                showNotification('Logged in as Administrator!', 'success');
+                refreshAll();
+                showNotification('Administrator mode unlocked!', 'success');
             } else {
                 showNotification('Incorrect admin password!', 'error');
             }
@@ -376,8 +854,8 @@
             localStorage.setItem('ledger_is_admin', 'false');
             closeAdminModal();
             updateUIMode();
-            renderTable();
-            showNotification('Logged out from Admin mode.', 'info');
+            refreshAll();
+            showNotification('Switched to Viewer Mode.', 'info');
         }
 
         function updateUIMode() {
@@ -385,8 +863,10 @@
             const emptyAddBtn = document.getElementById('emptyAddBtn');
             const printReportBtn = document.getElementById('printReportBtn');
             const actionHeaderCol = document.getElementById('actionHeaderCol');
+            const footActionSpacer = document.getElementById('footActionSpacer');
             const adminBtnText = document.getElementById('adminBtnText');
             const adminIcon = document.getElementById('adminIcon');
+            const adminDot = document.getElementById('adminDot');
             const adminModeBtn = document.getElementById('adminModeBtn');
 
             if (isAdmin) {
@@ -394,21 +874,74 @@
                 emptyAddBtn.classList.remove('hidden');
                 printReportBtn.classList.remove('hidden');
                 actionHeaderCol.classList.remove('hidden');
+                footActionSpacer.classList.remove('hidden');
                 adminBtnText.textContent = 'Admin Mode';
-                adminIcon.className = 'fa-solid fa-lock-open text-xs text-indigo-600';
-                adminModeBtn.className = 'bg-indigo-50 border border-indigo-200 text-indigo-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs';
+                adminIcon.className = 'fa-solid fa-lock-open text-xs text-indigo-600 dark:text-indigo-400';
+                adminDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500 admin-pulse text-emerald-500';
+                adminModeBtn.className = 'bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-3.5 py-2 rounded-xl font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer';
             } else {
                 addBtn.classList.add('hidden');
                 emptyAddBtn.classList.add('hidden');
                 printReportBtn.classList.add('hidden');
                 actionHeaderCol.classList.add('hidden');
+                footActionSpacer.classList.add('hidden');
                 adminBtnText.textContent = 'Viewer Mode';
                 adminIcon.className = 'fa-solid fa-lock text-xs text-slate-500';
-                adminModeBtn.className = 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs';
+                adminDot.className = 'relative inline-flex rounded-full h-2 w-2 bg-slate-400';
+                adminModeBtn.className = 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer';
             }
         }
 
-        // Modal Open / Close Controls for Transactions
+        // Bracketed Range (₱5 per ₱250) & Manual Transaction Charge Controls
+        function calculateRangeCharge(amount) {
+            if (isNaN(amount) || amount <= 0) return 0;
+            return Math.ceil(Number((amount / 250).toFixed(6))) * 5;
+        }
+
+        function updateChargeModeUI() {
+            const btn = document.getElementById('chargeModeToggleBtn');
+            if (!btn) return;
+
+            if (isAutoCharge) {
+                btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 transition-colors cursor-pointer';
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i><span>Auto Range</span>`;
+            } else {
+                btn.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/70 transition-colors cursor-pointer';
+                btn.innerHTML = `<i class="fa-solid fa-pen text-[9px]"></i><span>Manual · Auto</span>`;
+            }
+        }
+
+        function handleAmountInput() {
+            if (isAutoCharge) {
+                const amount = parseFloat(document.getElementById('txAmount').value);
+                const chargeInput = document.getElementById('txCharge');
+                if (!isNaN(amount) && amount > 0) {
+                    chargeInput.value = calculateRangeCharge(amount).toFixed(2);
+                } else {
+                    chargeInput.value = '0.00';
+                }
+            }
+            updateChargeModeUI();
+        }
+
+        function handleManualChargeInput() {
+            isAutoCharge = false;
+            updateChargeModeUI();
+        }
+
+        function toggleChargeMode() {
+            isAutoCharge = !isAutoCharge;
+            const chargeInput = document.getElementById('txCharge');
+            if (isAutoCharge) {
+                handleAmountInput();
+            } else {
+                updateChargeModeUI();
+                chargeInput.focus();
+                chargeInput.select();
+            }
+        }
+
+        // Transaction Modal Controls
         function openModal(editIdx = -1) {
             if (!isAdmin) {
                 showNotification('Access denied. Administrator privileges required.', 'error');
@@ -418,7 +951,7 @@
             const modal = document.getElementById('transactionModal');
             const modalContainer = document.getElementById('modalContainer');
             const modalTitle = document.getElementById('modalTitle');
-            
+
             if (editIdx > -1) {
                 modalTitle.textContent = 'Edit Transaction';
                 document.getElementById('editIndex').value = editIdx;
@@ -430,35 +963,39 @@
                 document.getElementById('txCharge').value = tx.charge;
                 document.getElementById('txStatus').value = tx.status;
                 document.getElementById('txRemarks').value = tx.remarks || '';
+
+                const expectedAuto = Number(calculateRangeCharge(tx.amount).toFixed(2));
+                isAutoCharge = tx.amount > 0 && Math.abs(tx.charge - expectedAuto) < 0.005;
+                updateChargeModeUI();
             } else {
                 modalTitle.textContent = 'Add New Transaction';
                 document.getElementById('editIndex').value = -1;
                 document.getElementById('transactionForm').reset();
                 setDefaultDate();
+                isAutoCharge = true;
                 document.getElementById('txCharge').value = '0.00';
                 document.getElementById('txRemarks').value = '';
+                updateChargeModeUI();
             }
 
             modal.classList.remove('opacity-0', 'pointer-events-none');
-            modalContainer.classList.remove('scale-95');
-            modalContainer.classList.add('scale-100');
+            modalContainer.classList.remove('scale-95', 'translate-y-4');
+            modalContainer.classList.add('scale-100', 'translate-y-0');
         }
 
         function closeModal() {
             const modal = document.getElementById('transactionModal');
             const modalContainer = document.getElementById('modalContainer');
             modal.classList.add('opacity-0', 'pointer-events-none');
-            modalContainer.classList.remove('scale-100');
-            modalContainer.classList.add('scale-95');
+            modalContainer.classList.remove('scale-100', 'translate-y-0');
+            modalContainer.classList.add('scale-95', 'translate-y-4');
         }
 
-        // Form Submit Handler
         function handleFormSubmit(e) {
             e.preventDefault();
             if (!isAdmin) return;
 
             const editIdx = parseInt(document.getElementById('editIndex').value);
-            
             const newTx = {
                 date: document.getElementById('txDate').value,
                 name: document.getElementById('txName').value.trim(),
@@ -471,133 +1008,683 @@
 
             if (editIdx > -1) {
                 transactions[editIdx] = newTx;
-                showNotification('Transaction updated successfully!', 'success');
+                showNotification('Transaction updated!', 'success');
             } else {
                 transactions.push(newTx);
-                showNotification('Transaction added successfully!', 'success');
+                showNotification('Transaction added!', 'success');
             }
 
             saveAndRender();
             closeModal();
         }
 
-        // Delete Transaction
+        function markAsPaid(index) {
+            if (!isAdmin) {
+                showNotification('Switch to Admin Mode to update payment status.', 'info');
+                return;
+            }
+            if (transactions[index] && transactions[index].status !== 'paid') {
+                transactions[index].status = 'paid';
+                saveAndRender();
+                showNotification('Transaction marked as PAID!', 'success');
+            }
+        }
+
+        function toggleTransactionStatus(index) {
+            if (!isAdmin) {
+                showNotification('Switch to Admin Mode to update payment status.', 'info');
+                return;
+            }
+            transactions[index].status = transactions[index].status === 'paid' ? 'unpaid' : 'paid';
+            saveAndRender();
+            showNotification(`Marked as ${transactions[index].status.toUpperCase()}`, 'success');
+        }
+
         function deleteTransaction(index) {
             if (!isAdmin) {
                 showNotification('Access denied. Administrator privileges required.', 'error');
                 return;
             }
-
-            if (confirm('Are you sure you want to delete this transaction?')) {
+            if (confirm('Delete this transaction permanently?')) {
                 transactions.splice(index, 1);
                 saveAndRender();
-                showNotification('Transaction deleted!', 'info');
+                showNotification('Transaction deleted.', 'info');
+            }
+        }
+
+        function clearAllTransactions() {
+            if (!isAdmin) return;
+            if (confirm('Are you sure you want to clear all ledger records?')) {
+                transactions = [];
+                saveAndRender();
+                closeAdminModal();
+                showNotification('All transactions cleared.', 'info');
             }
         }
 
         function saveAndRender() {
             localStorage.setItem('ledger_transactions', JSON.stringify(transactions));
-            renderTable();
+            refreshAll();
         }
 
+        // Load Realistic Demo Data
+        function loadSampleData() {
+            const today = new Date();
+            const fmt = (daysAgo) => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - daysAgo);
+                return d.toISOString().split('T')[0];
+            };
+
+            transactions = [
+                { date: fmt(14), name: 'Initial Wallet Load', type: 'debit', amount: 25000, charge: 0, status: 'paid', remarks: 'Opening capital allocation' },
+                { date: fmt(13), name: 'Maria Santos', type: 'credit', amount: 3500, charge: 70, status: 'paid', remarks: 'GCash cash-out ref #8821' },
+                { date: fmt(12), name: 'Juan Dela Cruz', type: 'debit', amount: 5000, charge: 50, status: 'paid', remarks: 'Maya wallet top-up' },
+                { date: fmt(10), name: 'Angela Reyes', type: 'credit', amount: 4200, charge: 85, status: 'unpaid', remarks: 'Credit + charge to be settled Friday' },
+                { date: fmt(9),  name: 'Carlos Mendoza', type: 'debit', amount: 8000, charge: 80, status: 'paid', remarks: 'Bank transfer cash-in' },
+                { date: fmt(7),  name: 'Maria Santos', type: 'credit', amount: 6000, charge: 120, status: 'paid', remarks: 'Express remittance cash-out' },
+                { date: fmt(5),  name: 'Sofia Lim', type: 'debit', amount: 4500, charge: 45, status: 'unpaid', remarks: 'Pending fee confirmation' },
+                { date: fmt(3),  name: 'Juan Dela Cruz', type: 'credit', amount: 2800, charge: 55, status: 'paid', remarks: 'Walk-in cash-out' },
+                { date: fmt(1),  name: 'Marco Villanueva', type: 'debit', amount: 10000, charge: 100, status: 'paid', remarks: 'Merchant settlement load' },
+                { date: fmt(0),  name: 'Angela Reyes', type: 'credit', amount: 3200, charge: 65, status: 'unpaid', remarks: 'Ref #99402' }
+            ];
+            saveAndRender();
+            showNotification('Sample ledger loaded with 10 transactions!', 'success');
+        }
+
+        // Filter & Sort Controls
         function setFilter(status) {
             currentFilter = status;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white');
-                btn.classList.add('bg-slate-100', 'text-slate-600');
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-2xs');
+                btn.classList.add('text-slate-600', 'dark:text-slate-400');
             });
             const activeBtn = document.getElementById(`filterBtn${status.charAt(0).toUpperCase() + status.slice(1)}`);
-            activeBtn.classList.remove('bg-slate-100', 'text-slate-600');
-            activeBtn.classList.add('bg-indigo-600', 'text-white');
+            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+            activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-2xs');
             renderTable();
+        }
+
+        function setTypeFilter(type) {
+            currentTypeFilter = type;
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-white', 'shadow-2xs');
+                btn.classList.add('text-slate-500', 'dark:text-slate-400');
+            });
+            const activeBtn = document.getElementById(`typeBtn${type.charAt(0).toUpperCase() + type.slice(1)}`);
+            activeBtn.classList.remove('text-slate-500', 'dark:text-slate-400');
+            activeBtn.classList.add('bg-white', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-white', 'shadow-2xs');
+            renderTable();
+        }
+
+        function toggleSortOrder() {
+            sortAscending = !sortAscending;
+            document.getElementById('sortLabel').textContent = sortAscending ? 'Oldest First' : 'Newest First';
+            document.getElementById('sortIcon').className = sortAscending
+                ? 'fa-solid fa-arrow-down-short-wide text-indigo-500'
+                : 'fa-solid fa-arrow-up-wide-short text-indigo-500';
+            renderTable();
+        }
+
+        function setChartGranularity(gran) {
+            chartGranularity = gran;
+            const dailyBtn = document.getElementById('granDailyBtn');
+            const monthlyBtn = document.getElementById('granMonthlyBtn');
+            if (gran === 'daily') {
+                dailyBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition-all cursor-pointer';
+                monthlyBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
+            } else {
+                monthlyBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition-all cursor-pointer';
+                dailyBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
+            }
+            refreshAll();
         }
 
         function filterTransactions() {
+            const searchVal = document.getElementById('searchInput').value;
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (searchVal.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
             renderTable();
         }
 
-        // Render Ledger Table & Cards
-        function renderTable() {
-            const tbody = document.getElementById('ledgerTableBody');
-            const emptyState = document.getElementById('emptyState');
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            renderTable();
+        }
 
-            tbody.innerHTML = '';
+        // Master Computation & Render Pipeline
+        function refreshAll() {
+            // 1. Build chronologically sorted ledger rows while preserving original array index
+            const indexed = transactions.map((tx, idx) => ({ originalIndex: idx, ...tx }));
+            indexed.sort((a, b) => {
+                if (a.date === b.date) return a.originalIndex - b.originalIndex;
+                return a.date.localeCompare(b.date);
+            });
 
             let totalDebit = 0;
             let totalCredit = 0;
+            let paidCredit = 0;
+            let unpaidCreditAmount = 0;
+            let debitCount = 0;
+            let creditCount = 0;
             let totalCharges = 0;
             let chargesGained = 0;
+            let unpaidCharges = 0;
+            let totalUnpaidWithCharge = 0;
+            let unpaidCount = 0;
             let currentBalanceTracker = 0;
+            let cashOnHandTracker = 0;
 
-            let calculatedRows = [];
+            let maxDebit = { amount: 0, name: '—' };
+            let maxCredit = { amount: 0, name: '—' };
+            let maxUnpaid = { amount: 0, name: '—' };
+            let peakBalance = { amount: -Infinity, date: '—' };
 
-            transactions.forEach((tx, idx) => {
+            const accountStats = {};
+            const monthsSet = new Set();
+            const namesSet = new Set();
+
+            const calculatedChronological = indexed.map(tx => {
                 const debitVal = tx.type === 'debit' ? tx.amount : 0;
                 const creditVal = tx.type === 'credit' ? tx.amount : 0;
-                
-                totalDebit += debitVal;
-                totalCredit += creditVal;
-                totalCharges += tx.charge;
 
-                let effectiveChargeForBalance = (tx.status === 'paid') ? tx.charge : 0;
-                if (tx.status === 'paid') {
-                    chargesGained += tx.charge;
+                // Unpaid due includes unpaid credited amount + charge for unpaid credit entries,
+                // and unpaid charge for unpaid debit entries.
+                const rowUnpaidCredit = (tx.type === 'credit' && tx.status === 'unpaid') ? creditVal : 0;
+                const rowUnpaidCharge = tx.status === 'unpaid' ? tx.charge : 0;
+                const rowUnpaidTotal = rowUnpaidCredit + rowUnpaidCharge;
+
+                if (tx.type === 'debit') {
+                    totalDebit += debitVal;
+                    debitCount++;
+                    if (debitVal > maxDebit.amount) maxDebit = { amount: debitVal, name: tx.name };
+                } else {
+                    totalCredit += creditVal;
+                    creditCount++;
+                    if (tx.status === 'paid') {
+                        paidCredit += creditVal;
+                    } else {
+                        unpaidCreditAmount += creditVal;
+                    }
+                    if (creditVal > maxCredit.amount) maxCredit = { amount: creditVal, name: tx.name };
                 }
 
-                currentBalanceTracker += (debitVal - creditVal + effectiveChargeForBalance);
+                totalCharges += tx.charge;
 
-                calculatedRows.push({
-                    originalIndex: idx,
+                if (tx.status === 'paid') {
+                    chargesGained += tx.charge;
+                } else {
+                    unpaidCharges += tx.charge;
+                    totalUnpaidWithCharge += rowUnpaidTotal;
+                    if (rowUnpaidTotal > 0) unpaidCount++;
+                    if (rowUnpaidTotal > maxUnpaid.amount) {
+                        maxUnpaid = { amount: rowUnpaidTotal, name: tx.name };
+                    }
+                }
+
+                const effectiveCharge = tx.status === 'paid' ? tx.charge : 0;
+                currentBalanceTracker += (debitVal - creditVal);
+                const balanceWithUnpaid = currentBalanceTracker + totalUnpaidWithCharge;
+
+                // Cash on Hand: cumulative paid cash-out + paid charges (excludes wallet debit / wallet balance & unpaid entries)
+                const rowCashOnHandDelta = tx.status === 'paid'
+                    ? ((tx.type === 'credit' ? creditVal : 0) + tx.charge)
+                    : 0;
+                cashOnHandTracker += rowCashOnHandDelta;
+
+                if (currentBalanceTracker > peakBalance.amount) {
+                    peakBalance = { amount: currentBalanceTracker, date: tx.date };
+                }
+
+                // Entity tracking
+                if (!accountStats[tx.name]) {
+                    accountStats[tx.name] = { name: tx.name, volume: 0, fees: 0, unpaid: 0, count: 0 };
+                }
+                accountStats[tx.name].volume += tx.amount;
+                accountStats[tx.name].fees += tx.charge;
+                accountStats[tx.name].unpaid += rowUnpaidTotal;
+                accountStats[tx.name].count += 1;
+
+                if (tx.date && tx.date.length >= 7) monthsSet.add(tx.date.slice(0, 7));
+                if (tx.name) namesSet.add(tx.name);
+
+                return {
                     ...tx,
                     debitVal,
                     creditVal,
-                    runningBalance: currentBalanceTracker
-                });
+                    effectiveCharge,
+                    rowUnpaidCredit,
+                    rowUnpaidCharge,
+                    rowUnpaidTotal,
+                    runningBalance: currentBalanceTracker,
+                    balanceWithUnpaid,
+                    rowCashOnHandDelta,
+                    cashOnHand: cashOnHandTracker
+                };
             });
 
-            // Update Summary Cards
-            document.getElementById('cardTotalDebit').textContent = formatCurrency(totalDebit);
-            document.getElementById('cardTotalCredit').textContent = formatCurrency(totalCredit);
-            document.getElementById('cardTotalCharges').textContent = formatCurrency(totalCharges);
-            document.getElementById('cardChargesGained').textContent = formatCurrency(chargesGained);
-            
+            if (calculatedChronological.length === 0) {
+                peakBalance = { amount: 0, date: '—' };
+            }
+
+            const projectedNetBalance = currentBalanceTracker + totalUnpaidWithCharge;
+
+            // Update Month Dropdown & Datalist
+            updateFilterOptions(monthsSet, namesSet);
+
+            // Toggle Demo button visibility
+            document.getElementById('sampleDataBtn').style.display = transactions.length === 0 ? 'inline-flex' : 'none';
+
+            // 2. Animate KPI Cards
+            animateValue('cardTotalDebit', prevKpiValues.debit, totalDebit);
+            animateValue('cardTotalCredit', prevKpiValues.credit, totalCredit);
+            animateValue('cardTotalCharges', prevKpiValues.charges, totalCharges);
+            animateValue('cardChargesGained', prevKpiValues.gained, chargesGained);
+            animateValue('cardNetBalance', prevKpiValues.net, currentBalanceTracker);
+
+            prevKpiValues.debit = totalDebit;
+            prevKpiValues.credit = totalCredit;
+            prevKpiValues.charges = totalCharges;
+            prevKpiValues.gained = chargesGained;
+            prevKpiValues.net = currentBalanceTracker;
+
             const netBalanceEl = document.getElementById('cardNetBalance');
-            netBalanceEl.textContent = formatCurrency(currentBalanceTracker);
-            netBalanceEl.className = `text-xl font-bold mt-1 ${currentBalanceTracker >= 0 ? 'text-indigo-600' : 'text-rose-600'}`;
+            netBalanceEl.className = `text-xl font-mono font-bold mt-1.5 tabular-nums ${currentBalanceTracker >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`;
 
-            const filteredRows = calculatedRows.filter(row => {
-                const matchesSearch = row.name.toLowerCase().includes(searchQuery) || (row.remarks && row.remarks.toLowerCase().includes(searchQuery));
-                const matchesStatus = currentFilter === 'all' || row.status === currentFilter;
-                return matchesSearch && matchesStatus;
+            // Sub-metrics on KPI cards
+            const totalVolume = totalDebit + totalCredit;
+            const debitShare = totalVolume > 0 ? Math.round((totalDebit / totalVolume) * 100) : 0;
+            const creditShare = totalVolume > 0 ? (100 - debitShare) : 0;
+            const collectionRate = totalCharges > 0 ? Math.round((chargesGained / totalCharges) * 100) : 0;
+
+            document.getElementById('debitCountLabel').textContent = `${debitCount} ${debitCount === 1 ? 'entry' : 'entries'}`;
+            document.getElementById('debitShareLabel').textContent = `${debitShare}% vol`;
+            document.getElementById('creditCountLabel').textContent = `${creditCount} ${creditCount === 1 ? 'entry' : 'entries'}`;
+            document.getElementById('unpaidCreditOnlyLabel').textContent = formatCurrency(unpaidCreditAmount);
+            document.getElementById('unpaidTotalLabel').textContent = formatCurrency(totalUnpaidWithCharge);
+            document.getElementById('collectionRateLabel').textContent = `${collectionRate}%`;
+            document.getElementById('collectionProgressBar').style.width = `${collectionRate}%`;
+            document.getElementById('projectedBalanceLabel').textContent = formatCurrency(projectedNetBalance);
+
+            // 3. Update Benchmarks & Insights
+            document.getElementById('statMaxDebit').textContent = formatCurrency(maxDebit.amount);
+            document.getElementById('statMaxDebitName').textContent = maxDebit.name;
+            document.getElementById('statMaxCredit').textContent = formatCurrency(maxCredit.amount);
+            document.getElementById('statMaxCreditName').textContent = maxCredit.name;
+            document.getElementById('statPeakBalance').textContent = formatCurrency(peakBalance.amount);
+            document.getElementById('statPeakDate').textContent = peakBalance.date;
+            document.getElementById('statMaxUnpaid').textContent = formatCurrency(maxUnpaid.amount);
+            document.getElementById('statMaxUnpaidName').textContent = maxUnpaid.name;
+
+            const coverageRatio = totalCredit > 0 ? (totalDebit / totalCredit).toFixed(2) + 'x' : (totalDebit > 0 ? '∞' : '0.00x');
+            document.getElementById('coverageRatioLabel').textContent = coverageRatio;
+            document.getElementById('inflowCoverageBar').style.width = `${totalVolume > 0 ? debitShare : 50}%`;
+
+            document.getElementById('doughnutTotalLabel').textContent = formatCurrency(totalVolume);
+            document.getElementById('debitRatioStat').textContent = `${debitShare}%`;
+            document.getElementById('creditRatioStat').textContent = `${creditShare}%`;
+
+            updateSmartInsight({
+                totalCount: transactions.length,
+                unpaidCreditAmount,
+                unpaidCharges,
+                totalUnpaidWithCharge,
+                unpaidCount,
+                projectedNetBalance
             });
+
+            renderTopAccounts(accountStats);
+            renderCharts(calculatedChronological, totalDebit, paidCredit, chargesGained, totalUnpaidWithCharge);
+
+            // Store calculated rows globally for quick filtering/sorting
+            window._calculatedRows = calculatedChronological;
+            renderTable();
+        }
+
+        function updateFilterOptions(monthsSet, namesSet) {
+            const monthSelect = document.getElementById('monthFilter');
+            const currentMonth = monthSelect.value;
+            const sortedMonths = Array.from(monthsSet).sort().reverse();
+            monthSelect.innerHTML = '<option value="all">All Months</option>';
+            sortedMonths.forEach(m => {
+                const [y, mo] = m.split('-');
+                const label = new Date(y, parseInt(mo) - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = label;
+                if (m === currentMonth) opt.selected = true;
+                monthSelect.appendChild(opt);
+            });
+
+            const datalist = document.getElementById('existingNamesList');
+            datalist.innerHTML = '';
+            Array.from(namesSet).sort().forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                datalist.appendChild(opt);
+            });
+        }
+
+        function updateSmartInsight({ totalCount, unpaidCreditAmount, unpaidCharges, totalUnpaidWithCharge, unpaidCount, projectedNetBalance }) {
+            const el = document.getElementById('smartInsightText');
+            if (totalCount === 0) {
+                el.innerHTML = 'Ledger is currently empty. Click <strong>Load Demo Data</strong> or log into <strong>Admin Mode</strong> to add your first entry.';
+                return;
+            }
+            const parts = [];
+            if (totalUnpaidWithCharge > 0) {
+                parts.push(`<span class="text-amber-600 dark:text-amber-400 font-semibold">${formatCurrency(totalUnpaidWithCharge)}</span> total unpaid (${formatCurrency(unpaidCreditAmount)} credit + ${formatCurrency(unpaidCharges)} charges) across <strong>${unpaidCount}</strong> ${unpaidCount === 1 ? 'entry' : 'entries'}`);
+            } else {
+                parts.push(`<span class="text-emerald-600 dark:text-emerald-400 font-semibold">100% of credits & charges settled</span>`);
+            }
+            parts.push(`Balance w/ unpaid collected: <strong class="font-mono text-indigo-600 dark:text-indigo-400">${formatCurrency(projectedNetBalance)}</strong>`);
+            el.innerHTML = parts.join(' &nbsp;•&nbsp; ');
+        }
+
+        function renderTopAccounts(accountStats) {
+            const container = document.getElementById('topAccountsList');
+            const entities = Object.values(accountStats).sort((a, b) => b.volume - a.volume);
+            document.getElementById('uniqueEntitiesCount').textContent = `${entities.length} unique ${entities.length === 1 ? 'account' : 'accounts'}`;
+
+            if (entities.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 py-6 text-center">No account activity recorded yet.</p>';
+                return;
+            }
+
+            const top5 = entities.slice(0, 5);
+            const maxVol = top5[0].volume || 1;
+
+            container.innerHTML = top5.map((acc, idx) => {
+                const pctOfMax = Math.max(8, Math.round((acc.volume / maxVol) * 100));
+                const unpaidTag = acc.unpaid > 0
+                    ? `<span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50">Unpaid: ${formatCurrency(acc.unpaid)}</span>`
+                    : '';
+                return `
+                    <div class="group">
+                        <div class="flex items-center justify-between text-xs mb-1 gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+                                <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">${escapeHtml(acc.name)}</span>
+                                <span class="text-[10px] text-slate-400 shrink-0">(${acc.count} tx)</span>
+                                ${unpaidTag}
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <span class="text-[11px] text-teal-600 dark:text-teal-400 font-mono">+${formatCurrency(acc.fees)} fee</span>
+                                <span class="font-mono font-bold text-slate-800 dark:text-slate-100 tabular-nums">${formatCurrency(acc.volume)}</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-700" style="width: ${pctOfMax}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Interactive Chart.js Rendering
+        function renderCharts(chronologicalRows, totalDebit, paidCredit, chargesGained, totalUnpaidWithCharge) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.18)';
+            const tickColor = isDark ? '#94a3b8' : '#64748b';
+
+            // Group data by Daily or Monthly
+            const grouped = {};
+            chronologicalRows.forEach(row => {
+                const key = chartGranularity === 'monthly' ? row.date.slice(0, 7) : row.date;
+                if (!grouped[key]) {
+                    grouped[key] = { debit: 0, credit: 0, balance: row.runningBalance };
+                }
+                grouped[key].debit += row.debitVal;
+                grouped[key].credit += row.creditVal;
+                grouped[key].balance = row.runningBalance;
+            });
+
+            const labels = Object.keys(grouped);
+            const debitSeries = labels.map(k => grouped[k].debit);
+            const creditSeries = labels.map(k => grouped[k].credit);
+            const balanceSeries = labels.map(k => grouped[k].balance);
+
+            // 1. Cash-Flow & Running Balance Combo Chart
+            const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+
+            const balanceGradient = ctx1.createLinearGradient(0, 0, 0, 240);
+            balanceGradient.addColorStop(0, 'rgba(99, 102, 241, 0.28)');
+            balanceGradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+            cashFlowChartInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels.length ? labels : ['No Data'],
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Running Balance',
+                            data: balanceSeries.length ? balanceSeries : [0],
+                            borderColor: '#6366f1',
+                            backgroundColor: balanceGradient,
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#6366f1',
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Wallet Debit (In)',
+                            data: debitSeries.length ? debitSeries : [0],
+                            backgroundColor: 'rgba(16, 185, 129, 0.78)',
+                            borderRadius: 6,
+                            maxBarThickness: 22,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Cash-Out (Out)',
+                            data: creditSeries.length ? creditSeries : [0],
+                            backgroundColor: 'rgba(244, 63, 94, 0.78)',
+                            borderRadius: 6,
+                            maxBarThickness: 22,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                color: tickColor,
+                                font: { family: 'Inter', size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? '#0f172a' : '#1e293b',
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: tickColor, font: { family: 'JetBrains Mono', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: tickColor,
+                                font: { family: 'JetBrains Mono', size: 10 },
+                                callback: (v) => '₱' + Number(v).toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Distribution Doughnut Chart
+            const ctx2 = document.getElementById('distributionChart').getContext('2d');
+            if (distributionChartInstance) distributionChartInstance.destroy();
+
+            const hasData = (totalDebit + paidCredit + chargesGained + totalUnpaidWithCharge) > 0;
+            distributionChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wallet Debit', 'Paid Cash-Out', 'Charges Gained', 'Unpaid (Credit + Fee)'],
+                    datasets: [{
+                        data: hasData ? [totalDebit, paidCredit, chargesGained, totalUnpaidWithCharge] : [1],
+                        backgroundColor: hasData
+                            ? ['#10b981', '#f43f5e', '#14b8a6', '#f59e0b']
+                            : [isDark ? '#1e293b' : '#e2e8f0'],
+                        borderWidth: 0,
+                        hoverOffset: hasData ? 6 : 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 9,
+                                boxHeight: 9,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                color: tickColor,
+                                font: { family: 'Inter', size: 11, weight: '500' }
+                            }
+                        },
+                        tooltip: {
+                            enabled: hasData,
+                            backgroundColor: isDark ? '#0f172a' : '#1e293b',
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: (ctx) => ` ${ctx.label}: ${formatCurrency(ctx.parsed)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render Ledger Table Rows
+        function renderTable() {
+            const tbody = document.getElementById('ledgerTableBody');
+            const tfoot = document.getElementById('ledgerTableFooter');
+            const emptyState = document.getElementById('emptyState');
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            const monthFilter = document.getElementById('monthFilter').value;
+
+            const allRows = window._calculatedRows || [];
+            let filteredRows = allRows.filter(row => {
+                const matchesSearch = row.name.toLowerCase().includes(searchQuery) ||
+                    (row.remarks && row.remarks.toLowerCase().includes(searchQuery));
+                const matchesStatus = currentFilter === 'all' || row.status === currentFilter;
+                const matchesType = currentTypeFilter === 'all' || row.type === currentTypeFilter;
+                const matchesMonth = monthFilter === 'all' || row.date.startsWith(monthFilter);
+                return matchesSearch && matchesStatus && matchesType && matchesMonth;
+            });
+
+            if (!sortAscending) {
+                filteredRows = [...filteredRows].reverse();
+            }
+
+            document.getElementById('visibleCountBadge').textContent = `${filteredRows.length} ${filteredRows.length === 1 ? 'record' : 'records'}`;
+            tbody.innerHTML = '';
 
             if (filteredRows.length === 0) {
                 emptyState.classList.remove('hidden');
+                tfoot.classList.add('hidden');
+                return;
             } else {
                 emptyState.classList.add('hidden');
+                tfoot.classList.remove('hidden');
             }
 
-            // Build table rows
-            filteredRows.forEach(row => {
+            let subDebit = 0;
+            let subCredit = 0;
+            let subCharges = 0;
+            let subPaidCharges = 0;
+            let subUnpaid = 0;
+            let subCashOnHand = 0;
+
+            filteredRows.forEach((row, idx) => {
+                subDebit += row.debitVal;
+                subCredit += row.creditVal;
+                subCharges += row.charge;
+                subPaidCharges += row.effectiveCharge;
+                subUnpaid += row.rowUnpaidTotal;
+                subCashOnHand += row.rowCashOnHandDelta;
+
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50/75 transition-colors';
+                tr.className = 'animate-row hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors group';
+                tr.style.animationDelay = `${Math.min(idx * 0.025, 0.35)}s`;
 
-                const statusBadge = row.status === 'paid' 
-                    ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">Paid</span>`
-                    : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">Unpaid</span>`;
+                const clickableClass = isAdmin ? 'cursor-pointer hover:scale-105 active:scale-95 transition-transform' : '';
+                const badgeTitle = isAdmin ? 'title="Click to toggle Paid / Unpaid"' : '';
+                const statusBadge = row.status === 'paid'
+                    ? `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Paid</button>`
+                    : `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unpaid</button>`;
 
-                const remarksHtml = row.remarks ? `<p class="text-xs text-slate-500 mt-0.5"><i class="fa-solid fa-note-sticky text-[10px] mr-1 text-slate-400"></i>${escapeHtml(row.remarks)}</p>` : '';
+                const typePill = row.type === 'debit'
+                    ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-down-left"></i></span>`
+                    : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-up-right"></i></span>`;
+
+                const remarksHtml = row.remarks
+                    ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 pl-7"><i class="fa-regular fa-comment-dots text-[10px] mr-1 text-slate-400"></i>${escapeHtml(row.remarks)}</p>`
+                    : '';
+
+                // Unpaid (Credit + Charge) cell display
+                let unpaidCellHtml = '<span class="text-slate-300 dark:text-slate-700">—</span>';
+                if (row.rowUnpaidTotal > 0) {
+                    const breakdownNote = (row.rowUnpaidCredit > 0 && row.rowUnpaidCharge > 0)
+                        ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${formatCurrency(row.rowUnpaidCredit)} + ${formatCurrency(row.rowUnpaidCharge)}</div>`
+                        : (row.rowUnpaidCredit === 0 && row.rowUnpaidCharge > 0
+                            ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">charge only</div>`
+                            : '');
+                    unpaidCellHtml = `
+                        <span class="font-semibold text-amber-600 dark:text-amber-400">${formatCurrency(row.rowUnpaidTotal)}</span>
+                        ${breakdownNote}
+                    `;
+                }
 
                 let actionTdHtml = '';
                 if (isAdmin) {
+                    const markPaidBtnHtml = row.status === 'unpaid'
+                        ? `<button type="button" onclick="markAsPaid(${row.originalIndex})" class="h-8 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white dark:hover:text-white border border-emerald-200/80 dark:border-emerald-800/60 font-semibold text-xs transition-all active:scale-90 inline-flex items-center justify-center gap-1 cursor-pointer" title="Mark as Paid">
+                                <i class="fa-solid fa-check text-[11px]"></i>
+                                <span>Paid</span>
+                           </button>`
+                        : '';
+
                     actionTdHtml = `
                         <td class="py-3.5 px-4 text-center whitespace-nowrap no-print">
-                            <div class="flex items-center justify-center gap-2">
-                                <button onclick="openModal(${row.originalIndex})" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-all flex items-center justify-center cursor-pointer" title="Edit">
+                            <div class="flex items-center justify-center gap-1.5">
+                                ${markPaidBtnHtml}
+                                <button onclick="openModal(${row.originalIndex})" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-90 flex items-center justify-center cursor-pointer" title="Edit">
                                     <i class="fa-solid fa-pen text-xs"></i>
                                 </button>
-                                <button onclick="deleteTransaction(${row.originalIndex})" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition-all flex items-center justify-center cursor-pointer" title="Delete">
+                                <button onclick="deleteTransaction(${row.originalIndex})" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 transition-all active:scale-90 flex items-center justify-center cursor-pointer" title="Delete">
                                     <i class="fa-solid fa-trash text-xs"></i>
                                 </button>
                             </div>
@@ -606,33 +1693,56 @@
                 }
 
                 tr.innerHTML = `
-                    <td class="py-3.5 px-4 text-xs font-medium text-slate-600 whitespace-nowrap">${row.date}</td>
+                    <td class="py-3.5 px-4 text-xs font-mono font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">${row.date}</td>
                     <td class="py-3.5 px-4">
                         <div class="flex items-center gap-2">
-                            <span class="font-semibold text-slate-800">${escapeHtml(row.name)}</span>
+                            ${typePill}
+                            <span class="font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(row.name)}</span>
                             ${statusBadge}
                         </div>
                         ${remarksHtml}
                     </td>
-                    <td class="py-3.5 px-4 text-right font-semibold text-emerald-600 whitespace-nowrap">
-                        ${row.debitVal > 0 ? formatCurrency(row.debitVal) : '-'}
+                    <td class="py-3.5 px-4 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
+                        ${row.debitVal > 0 ? formatCurrency(row.debitVal) : '<span class="text-slate-300 dark:text-slate-700">—</span>'}
                     </td>
-                    <td class="py-3.5 px-4 text-right font-semibold text-rose-600 whitespace-nowrap">
-                        ${row.creditVal > 0 ? formatCurrency(row.creditVal) : '-'}
+                    <td class="py-3.5 px-4 text-right font-mono font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap tabular-nums">
+                        ${row.creditVal > 0 ? formatCurrency(row.creditVal) : '<span class="text-slate-300 dark:text-slate-700">—</span>'}
                     </td>
-                    <td class="py-3.5 px-4 text-right text-slate-600 whitespace-nowrap">
+                    <td class="py-3.5 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap tabular-nums">
                         ${row.charge > 0 ? formatCurrency(row.charge) : '₱0.00'}
                     </td>
-                    <td class="py-3.5 px-4 text-right font-bold ${row.runningBalance >= 0 ? 'text-slate-900' : 'text-rose-600'} whitespace-nowrap">
-                        ${formatCurrency(row.runningBalance)}
+                    <td class="py-3.5 px-4 text-right font-mono text-xs whitespace-nowrap tabular-nums">
+                        ${unpaidCellHtml}
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-mono font-bold ${row.runningBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'} whitespace-nowrap tabular-nums">
+                        <div>${formatCurrency(row.runningBalance)}</div>
+                        ${row.balanceWithUnpaid !== row.runningBalance ? `<div class="text-[10px] font-normal text-indigo-500 dark:text-indigo-400">w/ unpaid: ${formatCurrency(row.balanceWithUnpaid)}</div>` : ''}
+                    </td>
+                    <td class="py-3.5 px-4 text-right font-mono font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap tabular-nums">
+                        <div>${formatCurrency(row.cashOnHand)}</div>
+                        ${row.rowCashOnHandDelta > 0 ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">+${formatCurrency(row.rowCashOnHandDelta)}</div>` : ''}
                     </td>
                     ${actionTdHtml}
                 `;
                 tbody.appendChild(tr);
             });
+
+            // Populate Footer Subtotals
+            document.getElementById('footTotalDebit').textContent = formatCurrency(subDebit);
+            document.getElementById('footTotalCredit').textContent = formatCurrency(subCredit);
+            document.getElementById('footTotalCharges').textContent = formatCurrency(subCharges);
+            document.getElementById('footTotalUnpaid').textContent = formatCurrency(subUnpaid);
+
+            const subNet = subDebit - subCredit;
+            const netEl = document.getElementById('footNetFlow');
+            netEl.textContent = (subNet >= 0 ? '+' : '') + formatCurrency(subNet);
+            netEl.className = `py-3 px-4 text-right font-mono tabular-nums ${subNet >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`;
+
+            const cashEl = document.getElementById('footCashOnHand');
+            cashEl.textContent = (subCashOnHand > 0 ? '+' : '') + formatCurrency(subCashOnHand);
         }
 
-        // Print Report Function
+        // Print & CSV Export
         function printReport() {
             if (!isAdmin) {
                 showNotification('Access denied. Administrator privileges required.', 'error');
@@ -641,19 +1751,17 @@
             window.print();
         }
 
-        // Export Data to CSV
         function exportData() {
-            if (transactions.length === 0) {
+            const rows = window._calculatedRows || [];
+            if (rows.length === 0) {
                 showNotification('No data available to export!', 'error');
                 return;
             }
-
-            let csvContent = "data:text/csv;charset=utf-8,Date,Name,Type,Amount,Charge,Status,Remarks\n";
-            transactions.forEach(tx => {
+            let csvContent = "data:text/csv;charset=utf-8,Date,Name,Type,Amount,Charge,Status,Unpaid_Credit_Plus_Charge,Running_Balance,Balance_With_Unpaid,Cash_On_Hand,Remarks\n";
+            rows.forEach(tx => {
                 const remarks = tx.remarks ? tx.remarks.replace(/"/g, '""') : '';
-                csvContent += `"${tx.date}","${tx.name}","${tx.type}",${tx.amount},${tx.charge},"${tx.status}","${remarks}"\n`;
+                csvContent += `"${tx.date}","${tx.name}","${tx.type}",${tx.amount},${tx.charge},"${tx.status}",${tx.rowUnpaidTotal},${tx.runningBalance},${tx.balanceWithUnpaid},${tx.cashOnHand},"${remarks}"\n`;
             });
-
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -664,7 +1772,8 @@
             showNotification('Ledger exported as CSV!', 'success');
         }
 
-        // Notification Helper
+        // Notification Toast
+        let notifTimeout = null;
         function showNotification(message, type = 'success') {
             const notif = document.getElementById('notification');
             const notifText = document.getElementById('notifText');
@@ -672,19 +1781,27 @@
 
             notifText.textContent = message;
             if (type === 'success') {
-                notifIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+                notifIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
+            } else if (type === 'info') {
+                notifIcon.className = 'fa-solid fa-circle-info text-indigo-400 text-sm';
             } else {
-                notifIcon.className = 'fa-solid fa-circle-exclamation text-rose-400';
+                notifIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-sm';
             }
 
-            notif.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                notif.classList.add('translate-y-20', 'opacity-0');
+            notif.classList.remove('translate-y-24', 'opacity-0');
+            if (notifTimeout) clearTimeout(notifTimeout);
+            notifTimeout = setTimeout(() => {
+                notif.classList.add('translate-y-24', 'opacity-0');
             }, 3000);
         }
 
         function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
     </script>
 </body>
