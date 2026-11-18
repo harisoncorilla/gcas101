@@ -234,7 +234,19 @@
             <p class="text-xs text-slate-500 mt-1">Generated on <span id="printDate"></span></p>
         </div>
 
-                <!-- Enhanced KPI Summary Cards Grid (5 Cards) -->
+        <!-- Live Smart Insights Banner -->
+        <div id="insightsBanner" class="animate-card stagger-1 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl px-4 py-3 shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 no-print">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                </div>
+                <div class="text-xs text-slate-600 dark:text-slate-300" id="smartInsightText">
+                    Log into Admin Mode and add transactions to unlock real-time cash-flow insights.
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced KPI Summary Cards Grid (5 Cards) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <!-- 1. Total Wallet Debit -->
             <div class="animate-card stagger-1 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
@@ -285,12 +297,12 @@
                     </div>
                 </div>
                 <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                    <span title="Includes unpaid credited amounts + unpaid charges">Unpaid (Cr+Fee):</span>
+                    <span title="Remaining unpaid credited amounts + unpaid charges after partial payments">Unpaid (Cr+Fee):</span>
                     <span id="unpaidTotalLabel" class="font-mono font-semibold text-amber-600 dark:text-amber-400">₱0.00</span>
                 </div>
             </div>
 
-            <!-- 4. Charges Gained (Paid) + Collection Rate -->
+            <!-- 4. Charges Gained (Paid + Partial Fees) + Collection Rate -->
             <div class="animate-card stagger-4 group relative overflow-hidden bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
                 <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-400 to-cyan-500"></div>
                 <div class="flex items-start justify-between">
@@ -326,7 +338,7 @@
                     </div>
                 </div>
                 <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                    <span title="Net Balance + Unpaid Credit & Charges">Incl. Unpaid:</span>
+                    <span title="Net Balance + Remaining Unpaid Credit & Charges">Incl. Unpaid:</span>
                     <span id="projectedBalanceLabel" class="font-mono font-semibold text-indigo-600 dark:text-indigo-400">₱0.00</span>
                 </div>
             </div>
@@ -363,7 +375,7 @@
                                 <i class="fa-solid fa-chart-pie text-teal-500"></i>
                                 Volume & Unpaid Distribution
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Proportional breakdown including unpaid credit & fees</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Proportional breakdown reflecting partial & full collections</p>
                         </div>
                         <div class="relative h-52 w-full flex items-center justify-center">
                             <canvas id="distributionChart"></canvas>
@@ -395,7 +407,7 @@
                                     <i class="fa-solid fa-ranking-star text-amber-500"></i>
                                     Top Accounts by Transaction Volume
                                 </h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Most active counterparties, fee revenue & unpaid balances</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Most active counterparties, fee revenue & remaining unpaid balances</p>
                             </div>
                             <span class="text-[11px] font-medium text-slate-400" id="uniqueEntitiesCount">0 unique names</span>
                         </div>
@@ -474,9 +486,10 @@
 
                 <!-- Status Filter -->
                 <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                    <button onclick="setFilter('all')" id="filterBtnAll" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-2xs transition-all cursor-pointer">All</button>
-                    <button onclick="setFilter('paid')" id="filterBtnPaid" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Paid</button>
-                    <button onclick="setFilter('unpaid')" id="filterBtnUnpaid" class="filter-btn px-3 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Unpaid</button>
+                    <button onclick="setFilter('all')" id="filterBtnAll" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-2xs transition-all cursor-pointer">All</button>
+                    <button onclick="setFilter('paid')" id="filterBtnPaid" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Paid</button>
+                    <button onclick="setFilter('partial')" id="filterBtnPartial" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Partial</button>
+                    <button onclick="setFilter('unpaid')" id="filterBtnUnpaid" class="filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer">Unpaid</button>
                 </div>
 
                 <!-- Month Filter -->
@@ -501,7 +514,7 @@
                     <span id="visibleCountBadge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">0 records</span>
                 </div>
                 <div class="text-[11px] text-slate-400 hidden sm:block">
-                    Running balance tracks wallet cash flow; Cash on Hand tracks paid entries + charges (excluding wallet balance)
+                    Cash on Hand counts settled amounts & partial payments only; Unpaid reflects remaining balance due
                 </div>
             </div>
 
@@ -545,13 +558,10 @@
                     <i class="fa-solid fa-folder-open"></i>
                 </div>
                 <h3 class="text-base font-display font-bold text-slate-800 dark:text-slate-100">No transactions found</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Add a new debit/cash-out record in Admin Mode or load sample data to explore the analytics dashboard.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Log into Admin Mode to add a new debit or cash-out record to the ledger.</p>
                 <div class="mt-5 flex items-center justify-center gap-2.5 flex-wrap">
                     <button id="emptyAddBtn" onclick="openModal()" class="hidden inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer">
                         <i class="fa-solid fa-plus"></i> Add Transaction
-                    </button>
-                    <button onclick="loadSampleData()" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer">
-                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i> Populate Sample Ledger
                     </button>
                 </div>
             </div>
@@ -595,7 +605,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Transaction Type</label>
-                        <select id="txType" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
+                        <select id="txType" onchange="handleTxStatusChange()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                             <option value="debit">Wallet Debit (In)</option>
                             <option value="credit">Cash-out (Credit/Out)</option>
                         </select>
@@ -620,11 +630,22 @@
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Payment Status</label>
-                        <select id="txStatus" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
+                        <select id="txStatus" onchange="handleTxStatusChange()" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                             <option value="paid">Paid</option>
+                            <option value="partial">Partial Payment</option>
                             <option value="unpaid">Unpaid</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Partial Paid Amount Input (Visible when status is Partial) -->
+                <div id="txPartialPaidWrapper" class="hidden p-3.5 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-800/60 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label for="txPaidAmount" class="block text-[11px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">Partial Amount Paid (₱)</label>
+                        <span id="txTotalDueHint" class="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400">Total Due: ₱0.00</span>
+                    </div>
+                    <input type="number" step="0.01" min="0" id="txPaidAmount" placeholder="0.00" class="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-sky-200 dark:border-sky-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Only this partially paid amount will be counted in Cash on Hand & deducted from Unpaid.</p>
                 </div>
 
                 <!-- Remarks Box -->
@@ -642,6 +663,113 @@
         </div>
     </div>
 
+    <!-- Record Partial Payment Modal (Admin Only) -->
+    <div id="partialPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md mx-4 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 transform scale-95 translate-y-4 transition-all duration-300 overflow-hidden" id="partialModalContainer">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/70 dark:bg-slate-800/50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                        <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-display font-bold text-slate-900 dark:text-white">Record Partial Payment</h3>
+                        <p id="partialTxSubtitle" class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[230px]">Account Name</p>
+                    </div>
+                </div>
+                <button onclick="closePartialModal()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Form Body -->
+            <form id="partialPaymentForm" onsubmit="handlePartialPaymentSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="partialTxIndex" value="-1">
+
+                <!-- Current Account Summary Grid -->
+                <div class="grid grid-cols-3 gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70 text-center">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Due</p>
+                        <p id="partialSummaryTotalDue" class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 mt-1 tabular-nums">₱0.00</p>
+                    </div>
+                    <div class="border-x border-slate-200/80 dark:border-slate-700/80">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Already Paid</p>
+                        <p id="partialSummaryAlreadyPaid" class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">₱0.00</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Remaining</p>
+                        <p id="partialSummaryRemaining" class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 mt-1 tabular-nums">₱0.00</p>
+                    </div>
+                </div>
+
+                <!-- Partial Payment Amount Input -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="partialAmountInput" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount Paying Now (₱)</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="setPartialQuickRatio(0.25)" class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-slate-600 dark:text-slate-300 hover:text-sky-700 transition-colors cursor-pointer">25%</button>
+                            <button type="button" onclick="setPartialQuickRatio(0.5)" class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-slate-600 dark:text-slate-300 hover:text-sky-700 transition-colors cursor-pointer">50%</button>
+                            <button type="button" onclick="setPartialQuickRatio(1)" class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-400 transition-colors cursor-pointer">Full</button>
+                        </div>
+                    </div>
+                    <input type="number" step="0.01" min="0.01" id="partialAmountInput" oninput="updatePartialPreview()" placeholder="0.00" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-base font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+                    <p id="partialValidationError" class="hidden text-[11px] font-medium text-rose-600 dark:text-rose-400 mt-1"></p>
+                </div>
+
+                <!-- Live Computation Preview Box -->
+                <div class="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/70 dark:border-indigo-800/60 space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-600 dark:text-slate-300 font-medium">Added to Cash on Hand:</span>
+                        <span id="previewCashAdded" class="font-mono font-bold text-teal-600 dark:text-teal-400 tabular-nums">+₱0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-600 dark:text-slate-300 font-medium">Cumulative Paid on Account:</span>
+                        <span id="previewCumulativePaid" class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">₱0.00</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-600 dark:text-slate-300 font-medium">New Unpaid Balance:</span>
+                        <span id="previewNewUnpaid" class="font-mono font-bold text-amber-600 dark:text-amber-400 tabular-nums">₱0.00</span>
+                    </div>
+                    <div class="pt-2 border-t border-indigo-200/50 dark:border-indigo-800/50 flex items-center justify-between">
+                        <span class="text-slate-500 dark:text-slate-400 font-medium">Resulting Status:</span>
+                        <span id="previewStatusBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400">Partial</span>
+                    </div>
+                </div>
+
+                <!-- Optional Payment Note -->
+                <div>
+                    <label for="partialNoteInput" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Payment Note (Optional)</label>
+                    <input type="text" id="partialNoteInput" placeholder="e.g. Paid ₱500 via GCash ref #1234" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all">
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closePartialModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer">Cancel</button>
+                    <button type="submit" id="confirmPartialBtn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-glow transition-all active:scale-95 cursor-pointer">Apply Partial Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces native confirm()) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 transform scale-95 translate-y-4 transition-all duration-300" id="confirmModalContainer">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+                </div>
+                <div>
+                    <h3 id="confirmModalTitle" class="text-sm font-display font-bold text-slate-900 dark:text-white">Confirm Action</h3>
+                    <p id="confirmModalMessage" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Are you sure you want to proceed?</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onclick="closeConfirmModal()" class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">Cancel</button>
+                <button type="button" id="confirmModalActionBtn" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Admin Login / Management Modal -->
     <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm mx-4 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 p-6 space-y-4 transform scale-95 translate-y-4 transition-all duration-300" id="adminModalContainer">
@@ -652,17 +780,17 @@
                 </button>
             </div>
             <div id="adminLoginView" class="space-y-3">
-                <p class="text-xs text-slate-500 dark:text-slate-400">Enter administrator password to unlock adding, editing, and status toggling.</p>
-                <input type="password" id="adminPasswordInput" onkeydown="if(event.key==='Enter') verifyAdminPassword()" placeholder="Enter admin password (default: admin123)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Enter administrator password to unlock adding, editing, partial payments, and status toggling.</p>
+                <input type="password" id="adminPasswordInput" onkeydown="if(event.key==='Enter') verifyAdminPassword()" placeholder="Enter admin password" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="flex justify-end gap-2 pt-2">
                     <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer">Cancel</button>
                     <button onclick="verifyAdminPassword()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Unlock Admin</button>
                 </div>
             </div>
             <div id="adminLogoutView" class="hidden space-y-3">
-                <p class="text-xs text-slate-600 dark:text-slate-300">You are currently authenticated as an <strong>Administrator</strong>. You can edit entries or click any status badge or quick Paid button to settle entries.</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300">You are currently authenticated as an <strong>Administrator</strong>. You can record partial payments, edit entries, or settle full balances.</p>
                 <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <button onclick="clearAllTransactions()" class="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-semibold cursor-pointer">Clear Ledger</button>
+                    <button onclick="promptClearAllTransactions()" class="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-semibold cursor-pointer">Clear Ledger</button>
                     <div class="flex gap-2">
                         <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer">Close</button>
                         <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-sm">Log Out</button>
@@ -689,6 +817,7 @@
         let analyticsVisible = true;
         let isAutoCharge = true;
         let isAdmin = localStorage.getItem('ledger_is_admin') === 'true';
+        let pendingConfirmAction = null;
 
         // Chart.js Instances
         let cashFlowChartInstance = null;
@@ -783,6 +912,71 @@
                 }
             }
             requestAnimationFrame(update);
+        }
+
+        // Partial Payment Computation Helper
+        // Computes total receivable due, paid principal, paid fee, and remaining unpaid balances
+        function getTxPaymentBreakdown(tx) {
+            const creditVal = tx.type === 'credit' ? (Number(tx.amount) || 0) : 0;
+            const chargeVal = Number(tx.charge) || 0;
+            const totalDue = Number((creditVal + chargeVal).toFixed(2));
+
+            let paidAmount = 0;
+            if (tx.status === 'paid') {
+                paidAmount = totalDue;
+            } else if (tx.status === 'partial') {
+                const rawPaid = Number(tx.paidAmount) || 0;
+                paidAmount = Math.min(totalDue, Math.max(0, Number(rawPaid.toFixed(2))));
+            } else {
+                paidAmount = 0;
+            }
+
+            // Settle service charges first from partial payments, then apply remainder to cash-out principal
+            const paidCharge = Number(Math.min(chargeVal, paidAmount).toFixed(2));
+            const paidCredit = Number(Math.min(creditVal, Math.max(0, paidAmount - paidCharge)).toFixed(2));
+
+            const unpaidCharge = Number(Math.max(0, chargeVal - paidCharge).toFixed(2));
+            const unpaidCredit = Number(Math.max(0, creditVal - paidCredit).toFixed(2));
+            const unpaidTotal = Number((unpaidCredit + unpaidCharge).toFixed(2));
+
+            return {
+                totalDue,
+                paidAmount,
+                paidCredit,
+                paidCharge,
+                unpaidCredit,
+                unpaidCharge,
+                unpaidTotal
+            };
+        }
+
+        // Custom Confirmation Modal Controls
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalMessage').textContent = message;
+            pendingConfirmAction = onConfirm;
+
+            const modal = document.getElementById('confirmModal');
+            const container = document.getElementById('confirmModalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95', 'translate-y-4');
+            container.classList.add('scale-100', 'translate-y-0');
+
+            document.getElementById('confirmModalActionBtn').onclick = () => {
+                if (typeof pendingConfirmAction === 'function') {
+                    pendingConfirmAction();
+                }
+                closeConfirmModal();
+            };
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            const container = document.getElementById('confirmModalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100', 'translate-y-0');
+            container.classList.add('scale-95', 'translate-y-4');
+            pendingConfirmAction = null;
         }
 
         // Admin Authentication Controls
@@ -905,11 +1099,13 @@
                 }
             }
             updateChargeModeUI();
+            updateTxTotalDueHint();
         }
 
         function handleManualChargeInput() {
             isAutoCharge = false;
             updateChargeModeUI();
+            updateTxTotalDueHint();
         }
 
         function toggleChargeMode() {
@@ -924,7 +1120,29 @@
             }
         }
 
-        // Transaction Modal Controls
+        function updateTxTotalDueHint() {
+            const type = document.getElementById('txType').value;
+            const amount = parseFloat(document.getElementById('txAmount').value) || 0;
+            const charge = parseFloat(document.getElementById('txCharge').value) || 0;
+            const totalDue = (type === 'credit' ? amount : 0) + charge;
+            const hintEl = document.getElementById('txTotalDueHint');
+            if (hintEl) {
+                hintEl.textContent = `Total Due: ${formatCurrency(totalDue)}`;
+            }
+        }
+
+        function handleTxStatusChange() {
+            const status = document.getElementById('txStatus').value;
+            const wrapper = document.getElementById('txPartialPaidWrapper');
+            if (status === 'partial') {
+                wrapper.classList.remove('hidden');
+                updateTxTotalDueHint();
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+
+        // Transaction Add/Edit Modal Controls
         function openModal(editIdx = -1) {
             if (!isAdmin) {
                 showNotification('Access denied. Administrator privileges required.', 'error');
@@ -939,17 +1157,20 @@
                 modalTitle.textContent = 'Edit Transaction';
                 document.getElementById('editIndex').value = editIdx;
                 const tx = transactions[editIdx];
+                const breakdown = getTxPaymentBreakdown(tx);
                 document.getElementById('txDate').value = tx.date;
                 document.getElementById('txName').value = tx.name;
                 document.getElementById('txType').value = tx.type;
                 document.getElementById('txAmount').value = tx.amount;
                 document.getElementById('txCharge').value = tx.charge;
                 document.getElementById('txStatus').value = tx.status;
+                document.getElementById('txPaidAmount').value = breakdown.paidAmount > 0 ? breakdown.paidAmount.toFixed(2) : '';
                 document.getElementById('txRemarks').value = tx.remarks || '';
 
                 const expectedAuto = Number(calculateRangeCharge(tx.amount).toFixed(2));
                 isAutoCharge = tx.amount > 0 && Math.abs(tx.charge - expectedAuto) < 0.005;
                 updateChargeModeUI();
+                handleTxStatusChange();
             } else {
                 modalTitle.textContent = 'Add New Transaction';
                 document.getElementById('editIndex').value = -1;
@@ -957,8 +1178,10 @@
                 setDefaultDate();
                 isAutoCharge = true;
                 document.getElementById('txCharge').value = '0.00';
+                document.getElementById('txPaidAmount').value = '';
                 document.getElementById('txRemarks').value = '';
                 updateChargeModeUI();
+                handleTxStatusChange();
             }
 
             modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -979,13 +1202,39 @@
             if (!isAdmin) return;
 
             const editIdx = parseInt(document.getElementById('editIndex').value);
+            const type = document.getElementById('txType').value;
+            const amount = parseFloat(document.getElementById('txAmount').value) || 0;
+            const charge = parseFloat(document.getElementById('txCharge').value) || 0;
+            let status = document.getElementById('txStatus').value;
+            const totalDue = Number(((type === 'credit' ? amount : 0) + charge).toFixed(2));
+
+            let paidAmount = 0;
+            if (status === 'paid') {
+                paidAmount = totalDue;
+            } else if (status === 'partial') {
+                const rawPartial = parseFloat(document.getElementById('txPaidAmount').value) || 0;
+                if (rawPartial <= 0) {
+                    showNotification('Enter a partial payment amount greater than ₱0.00.', 'error');
+                    return;
+                }
+                if (rawPartial >= totalDue) {
+                    status = 'paid';
+                    paidAmount = totalDue;
+                } else {
+                    paidAmount = Number(rawPartial.toFixed(2));
+                }
+            } else {
+                paidAmount = 0;
+            }
+
             const newTx = {
                 date: document.getElementById('txDate').value,
                 name: document.getElementById('txName').value.trim(),
-                type: document.getElementById('txType').value,
-                amount: parseFloat(document.getElementById('txAmount').value) || 0,
-                charge: parseFloat(document.getElementById('txCharge').value) || 0,
-                status: document.getElementById('txStatus').value,
+                type,
+                amount,
+                charge,
+                status,
+                paidAmount,
                 remarks: document.getElementById('txRemarks').value.trim()
             };
 
@@ -1001,15 +1250,155 @@
             closeModal();
         }
 
+        // Dedicated Partial Payment Modal Controls
+        function openPartialPaymentModal(index) {
+            if (!isAdmin) {
+                showNotification('Switch to Admin Mode to record partial payments.', 'info');
+                return;
+            }
+            const tx = transactions[index];
+            if (!tx) return;
+
+            const breakdown = getTxPaymentBreakdown(tx);
+            if (breakdown.unpaidTotal <= 0) {
+                showNotification('This account has no remaining balance due.', 'info');
+                return;
+            }
+
+            document.getElementById('partialTxIndex').value = index;
+            document.getElementById('partialTxSubtitle').textContent = `${tx.name} • ${tx.date}`;
+            document.getElementById('partialSummaryTotalDue').textContent = formatCurrency(breakdown.totalDue);
+            document.getElementById('partialSummaryAlreadyPaid').textContent = formatCurrency(breakdown.paidAmount);
+            document.getElementById('partialSummaryRemaining').textContent = formatCurrency(breakdown.unpaidTotal);
+
+            const amountInput = document.getElementById('partialAmountInput');
+            amountInput.value = '';
+            amountInput.max = breakdown.unpaidTotal.toFixed(2);
+            document.getElementById('partialNoteInput').value = '';
+            document.getElementById('partialValidationError').classList.add('hidden');
+
+            updatePartialPreview();
+
+            const modal = document.getElementById('partialPaymentModal');
+            const container = document.getElementById('partialModalContainer');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-95', 'translate-y-4');
+            container.classList.add('scale-100', 'translate-y-0');
+
+            setTimeout(() => amountInput.focus(), 100);
+        }
+
+        function closePartialModal() {
+            const modal = document.getElementById('partialPaymentModal');
+            const container = document.getElementById('partialModalContainer');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            container.classList.remove('scale-100', 'translate-y-0');
+            container.classList.add('scale-95', 'translate-y-4');
+        }
+
+        function setPartialQuickRatio(ratio) {
+            const index = parseInt(document.getElementById('partialTxIndex').value);
+            const tx = transactions[index];
+            if (!tx) return;
+            const breakdown = getTxPaymentBreakdown(tx);
+            const target = Number((breakdown.unpaidTotal * ratio).toFixed(2));
+            document.getElementById('partialAmountInput').value = target.toFixed(2);
+            updatePartialPreview();
+        }
+
+        function updatePartialPreview() {
+            const index = parseInt(document.getElementById('partialTxIndex').value);
+            const tx = transactions[index];
+            if (!tx) return;
+
+            const breakdown = getTxPaymentBreakdown(tx);
+            const payNowRaw = parseFloat(document.getElementById('partialAmountInput').value);
+            const payNow = isNaN(payNowRaw) ? 0 : Math.max(0, payNowRaw);
+            const errEl = document.getElementById('partialValidationError');
+            const submitBtn = document.getElementById('confirmPartialBtn');
+
+            if (payNow > breakdown.unpaidTotal + 0.005) {
+                errEl.textContent = `Amount exceeds remaining balance of ${formatCurrency(breakdown.unpaidTotal)}.`;
+                errEl.classList.remove('hidden');
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                errEl.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            const effectivePayNow = Math.min(breakdown.unpaidTotal, payNow);
+            const newCumulativePaid = Number((breakdown.paidAmount + effectivePayNow).toFixed(2));
+            const newRemaining = Number(Math.max(0, breakdown.totalDue - newCumulativePaid).toFixed(2));
+
+            document.getElementById('previewCashAdded').textContent = `+${formatCurrency(effectivePayNow)}`;
+            document.getElementById('previewCumulativePaid').textContent = formatCurrency(newCumulativePaid);
+            document.getElementById('previewNewUnpaid').textContent = formatCurrency(newRemaining);
+
+            const statusBadgeEl = document.getElementById('previewStatusBadge');
+            if (newRemaining <= 0 && breakdown.totalDue > 0) {
+                statusBadgeEl.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400';
+                statusBadgeEl.textContent = 'Paid in Full';
+            } else {
+                statusBadgeEl.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-400';
+                statusBadgeEl.textContent = 'Partial Payment';
+            }
+        }
+
+        function handlePartialPaymentSubmit(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+
+            const index = parseInt(document.getElementById('partialTxIndex').value);
+            const tx = transactions[index];
+            if (!tx) return;
+
+            const breakdown = getTxPaymentBreakdown(tx);
+            const payNow = parseFloat(document.getElementById('partialAmountInput').value);
+
+            if (isNaN(payNow) || payNow <= 0) {
+                showNotification('Please enter a valid partial payment amount greater than ₱0.00.', 'error');
+                return;
+            }
+            if (payNow > breakdown.unpaidTotal + 0.005) {
+                showNotification(`Partial payment cannot exceed remaining balance (${formatCurrency(breakdown.unpaidTotal)}).`, 'error');
+                return;
+            }
+
+            const newCumulativePaid = Number(Math.min(breakdown.totalDue, breakdown.paidAmount + payNow).toFixed(2));
+            const newRemaining = Number(Math.max(0, breakdown.totalDue - newCumulativePaid).toFixed(2));
+
+            tx.paidAmount = newCumulativePaid;
+            tx.status = newRemaining <= 0 ? 'paid' : 'partial';
+
+            const note = document.getElementById('partialNoteInput').value.trim();
+            if (note) {
+                tx.remarks = tx.remarks ? `${tx.remarks} | ${note}` : note;
+            }
+
+            saveAndRender();
+            closePartialModal();
+
+            if (tx.status === 'paid') {
+                showNotification(`Remaining balance settled! Account marked as PAID.`, 'success');
+            } else {
+                showNotification(`Partial payment of ${formatCurrency(payNow)} recorded! Remaining: ${formatCurrency(newRemaining)}`, 'success');
+            }
+        }
+
         function markAsPaid(index) {
             if (!isAdmin) {
                 showNotification('Switch to Admin Mode to update payment status.', 'info');
                 return;
             }
-            if (transactions[index] && transactions[index].status !== 'paid') {
-                transactions[index].status = 'paid';
+            const tx = transactions[index];
+            if (tx && tx.status !== 'paid') {
+                const breakdown = getTxPaymentBreakdown(tx);
+                tx.status = 'paid';
+                tx.paidAmount = breakdown.totalDue;
                 saveAndRender();
-                showNotification('Transaction marked as PAID!', 'success');
+                showNotification('Transaction marked as PAID in full!', 'success');
             }
         }
 
@@ -1018,9 +1407,18 @@
                 showNotification('Switch to Admin Mode to update payment status.', 'info');
                 return;
             }
-            transactions[index].status = transactions[index].status === 'paid' ? 'unpaid' : 'paid';
+            const tx = transactions[index];
+            if (!tx) return;
+            const breakdown = getTxPaymentBreakdown(tx);
+            if (tx.status === 'paid') {
+                tx.status = 'unpaid';
+                tx.paidAmount = 0;
+            } else {
+                tx.status = 'paid';
+                tx.paidAmount = breakdown.totalDue;
+            }
             saveAndRender();
-            showNotification(`Marked as ${transactions[index].status.toUpperCase()}`, 'success');
+            showNotification(`Marked as ${tx.status.toUpperCase()}`, 'success');
         }
 
         function deleteTransaction(index) {
@@ -1028,51 +1426,34 @@
                 showNotification('Access denied. Administrator privileges required.', 'error');
                 return;
             }
-            if (confirm('Delete this transaction permanently?')) {
-                transactions.splice(index, 1);
-                saveAndRender();
-                showNotification('Transaction deleted.', 'info');
-            }
+            openConfirmModal(
+                'Delete Transaction',
+                'Are you sure you want to delete this transaction permanently?',
+                () => {
+                    transactions.splice(index, 1);
+                    saveAndRender();
+                    showNotification('Transaction deleted.', 'info');
+                }
+            );
         }
 
-        function clearAllTransactions() {
+        function promptClearAllTransactions() {
             if (!isAdmin) return;
-            if (confirm('Are you sure you want to clear all ledger records?')) {
-                transactions = [];
-                saveAndRender();
-                closeAdminModal();
-                showNotification('All transactions cleared.', 'info');
-            }
+            closeAdminModal();
+            openConfirmModal(
+                'Clear Entire Ledger',
+                'This will permanently remove all recorded transactions. This action cannot be undone.',
+                () => {
+                    transactions = [];
+                    saveAndRender();
+                    showNotification('All transactions cleared.', 'info');
+                }
+            );
         }
 
         function saveAndRender() {
             localStorage.setItem('ledger_transactions', JSON.stringify(transactions));
             refreshAll();
-        }
-
-        // Load Realistic Demo Data
-        function loadSampleData() {
-            const today = new Date();
-            const fmt = (daysAgo) => {
-                const d = new Date(today);
-                d.setDate(d.getDate() - daysAgo);
-                return d.toISOString().split('T')[0];
-            };
-
-            transactions = [
-                { date: fmt(14), name: 'Initial Wallet Load', type: 'debit', amount: 25000, charge: 0, status: 'paid', remarks: 'Opening capital allocation' },
-                { date: fmt(13), name: 'Maria Santos', type: 'credit', amount: 3500, charge: 70, status: 'paid', remarks: 'GCash cash-out ref #8821' },
-                { date: fmt(12), name: 'Juan Dela Cruz', type: 'debit', amount: 5000, charge: 50, status: 'paid', remarks: 'Maya wallet top-up' },
-                { date: fmt(10), name: 'Angela Reyes', type: 'credit', amount: 4200, charge: 85, status: 'unpaid', remarks: 'Credit + charge to be settled Friday' },
-                { date: fmt(9),  name: 'Carlos Mendoza', type: 'debit', amount: 8000, charge: 80, status: 'paid', remarks: 'Bank transfer cash-in' },
-                { date: fmt(7),  name: 'Maria Santos', type: 'credit', amount: 6000, charge: 120, status: 'paid', remarks: 'Express remittance cash-out' },
-                { date: fmt(5),  name: 'Sofia Lim', type: 'debit', amount: 4500, charge: 45, status: 'unpaid', remarks: 'Pending fee confirmation' },
-                { date: fmt(3),  name: 'Juan Dela Cruz', type: 'credit', amount: 2800, charge: 55, status: 'paid', remarks: 'Walk-in cash-out' },
-                { date: fmt(1),  name: 'Marco Villanueva', type: 'debit', amount: 10000, charge: 100, status: 'paid', remarks: 'Merchant settlement load' },
-                { date: fmt(0),  name: 'Angela Reyes', type: 'credit', amount: 3200, charge: 65, status: 'unpaid', remarks: 'Ref #99402' }
-            ];
-            saveAndRender();
-            showNotification('Sample ledger loaded with 10 transactions!', 'success');
         }
 
         // Filter & Sort Controls
@@ -1159,7 +1540,7 @@
             let chargesGained = 0;
             let unpaidCharges = 0;
             let totalUnpaidWithCharge = 0;
-            let unpaidCount = 0;
+            let unsettledCount = 0;
             let currentBalanceTracker = 0;
             let cashOnHandTracker = 0;
 
@@ -1176,11 +1557,8 @@
                 const debitVal = tx.type === 'debit' ? tx.amount : 0;
                 const creditVal = tx.type === 'credit' ? tx.amount : 0;
 
-                // Unpaid due includes unpaid credited amount + charge for unpaid credit entries,
-                // and unpaid charge for unpaid debit entries.
-                const rowUnpaidCredit = (tx.type === 'credit' && tx.status === 'unpaid') ? creditVal : 0;
-                const rowUnpaidCharge = tx.status === 'unpaid' ? tx.charge : 0;
-                const rowUnpaidTotal = rowUnpaidCredit + rowUnpaidCharge;
+                // Compute exact partial/paid/unpaid breakdown for this transaction
+                const breakdown = getTxPaymentBreakdown(tx);
 
                 if (tx.type === 'debit') {
                     totalDebit += debitVal;
@@ -1189,35 +1567,30 @@
                 } else {
                     totalCredit += creditVal;
                     creditCount++;
-                    if (tx.status === 'paid') {
-                        paidCredit += creditVal;
-                    } else {
-                        unpaidCreditAmount += creditVal;
-                    }
+                    // Only the paid or partially paid cash-out principal is counted in Paid Cash-Out
+                    paidCredit += breakdown.paidCredit;
+                    unpaidCreditAmount += breakdown.unpaidCredit;
                     if (creditVal > maxCredit.amount) maxCredit = { amount: creditVal, name: tx.name };
                 }
 
                 totalCharges += tx.charge;
+                // Only paid or partially paid charges are counted in Charges Gained
+                chargesGained += breakdown.paidCharge;
+                unpaidCharges += breakdown.unpaidCharge;
+                totalUnpaidWithCharge += breakdown.unpaidTotal;
 
-                if (tx.status === 'paid') {
-                    chargesGained += tx.charge;
-                } else {
-                    unpaidCharges += tx.charge;
-                    totalUnpaidWithCharge += rowUnpaidTotal;
-                    if (rowUnpaidTotal > 0) unpaidCount++;
-                    if (rowUnpaidTotal > maxUnpaid.amount) {
-                        maxUnpaid = { amount: rowUnpaidTotal, name: tx.name };
+                if (breakdown.unpaidTotal > 0) {
+                    unsettledCount++;
+                    if (breakdown.unpaidTotal > maxUnpaid.amount) {
+                        maxUnpaid = { amount: breakdown.unpaidTotal, name: tx.name };
                     }
                 }
 
-                const effectiveCharge = tx.status === 'paid' ? tx.charge : 0;
                 currentBalanceTracker += (debitVal - creditVal);
                 const balanceWithUnpaid = currentBalanceTracker + totalUnpaidWithCharge;
 
-                // Cash on Hand: cumulative paid cash-out + paid charges (excludes wallet debit / wallet balance & unpaid entries)
-                const rowCashOnHandDelta = tx.status === 'paid'
-                    ? ((tx.type === 'credit' ? creditVal : 0) + tx.charge)
-                    : 0;
+                // Cash on Hand counts ONLY the settled/partially paid amount (paidCredit + paidCharge)
+                const rowCashOnHandDelta = breakdown.paidAmount;
                 cashOnHandTracker += rowCashOnHandDelta;
 
                 if (currentBalanceTracker > peakBalance.amount) {
@@ -1230,7 +1603,7 @@
                 }
                 accountStats[tx.name].volume += tx.amount;
                 accountStats[tx.name].fees += tx.charge;
-                accountStats[tx.name].unpaid += rowUnpaidTotal;
+                accountStats[tx.name].unpaid += breakdown.unpaidTotal;
                 accountStats[tx.name].count += 1;
 
                 if (tx.date && tx.date.length >= 7) monthsSet.add(tx.date.slice(0, 7));
@@ -1240,10 +1613,13 @@
                     ...tx,
                     debitVal,
                     creditVal,
-                    effectiveCharge,
-                    rowUnpaidCredit,
-                    rowUnpaidCharge,
-                    rowUnpaidTotal,
+                    totalDue: breakdown.totalDue,
+                    paidAmount: breakdown.paidAmount,
+                    paidCredit: breakdown.paidCredit,
+                    effectiveCharge: breakdown.paidCharge,
+                    rowUnpaidCredit: breakdown.unpaidCredit,
+                    rowUnpaidCharge: breakdown.unpaidCharge,
+                    rowUnpaidTotal: breakdown.unpaidTotal,
                     runningBalance: currentBalanceTracker,
                     balanceWithUnpaid,
                     rowCashOnHandDelta,
@@ -1259,9 +1635,6 @@
 
             // Update Month Dropdown & Datalist
             updateFilterOptions(monthsSet, namesSet);
-
-            // Toggle Demo button visibility
-            document.getElementById('sampleDataBtn').style.display = transactions.length === 0 ? 'inline-flex' : 'none';
 
             // 2. Animate KPI Cards
             animateValue('cardTotalDebit', prevKpiValues.debit, totalDebit);
@@ -1317,7 +1690,7 @@
                 unpaidCreditAmount,
                 unpaidCharges,
                 totalUnpaidWithCharge,
-                unpaidCount,
+                unsettledCount,
                 projectedNetBalance
             });
 
@@ -1353,15 +1726,15 @@
             });
         }
 
-        function updateSmartInsight({ totalCount, unpaidCreditAmount, unpaidCharges, totalUnpaidWithCharge, unpaidCount, projectedNetBalance }) {
+        function updateSmartInsight({ totalCount, unpaidCreditAmount, unpaidCharges, totalUnpaidWithCharge, unsettledCount, projectedNetBalance }) {
             const el = document.getElementById('smartInsightText');
             if (totalCount === 0) {
-                el.innerHTML = 'Ledger is currently empty. Click <strong>Load Demo Data</strong> or log into <strong>Admin Mode</strong> to add your first entry.';
+                el.innerHTML = 'Ledger is currently empty. Log into <strong>Admin Mode</strong> to add your first entry.';
                 return;
             }
             const parts = [];
             if (totalUnpaidWithCharge > 0) {
-                parts.push(`<span class="text-amber-600 dark:text-amber-400 font-semibold">${formatCurrency(totalUnpaidWithCharge)}</span> total unpaid (${formatCurrency(unpaidCreditAmount)} credit + ${formatCurrency(unpaidCharges)} charges) across <strong>${unpaidCount}</strong> ${unpaidCount === 1 ? 'entry' : 'entries'}`);
+                parts.push(`<span class="text-amber-600 dark:text-amber-400 font-semibold">${formatCurrency(totalUnpaidWithCharge)}</span> remaining unpaid (${formatCurrency(unpaidCreditAmount)} credit + ${formatCurrency(unpaidCharges)} charges) across <strong>${unsettledCount}</strong> ${unsettledCount === 1 ? 'account' : 'accounts'}`);
             } else {
                 parts.push(`<span class="text-emerald-600 dark:text-emerald-400 font-semibold">100% of credits & charges settled</span>`);
             }
@@ -1607,7 +1980,6 @@
             let subDebit = 0;
             let subCredit = 0;
             let subCharges = 0;
-            let subPaidCharges = 0;
             let subUnpaid = 0;
             let subCashOnHand = 0;
 
@@ -1615,7 +1987,6 @@
                 subDebit += row.debitVal;
                 subCredit += row.creditVal;
                 subCharges += row.charge;
-                subPaidCharges += row.effectiveCharge;
                 subUnpaid += row.rowUnpaidTotal;
                 subCashOnHand += row.rowCashOnHandDelta;
 
@@ -1625,13 +1996,29 @@
 
                 const clickableClass = isAdmin ? 'cursor-pointer hover:scale-105 active:scale-95 transition-transform' : '';
                 const badgeTitle = isAdmin ? 'title="Click to toggle Paid / Unpaid"' : '';
-                const statusBadge = row.status === 'paid'
-                    ? `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Paid</button>`
-                    : `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unpaid</button>`;
+
+                let statusBadge = '';
+                if (row.status === 'paid') {
+                    statusBadge = `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Paid</button>`;
+                } else if (row.status === 'partial') {
+                    statusBadge = `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-400 border border-sky-200/70 dark:border-sky-800/60"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>Partial</button>`;
+                } else {
+                    statusBadge = `<button type="button" onclick="toggleTransactionStatus(${row.originalIndex})" ${badgeTitle} class="${clickableClass} inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Unpaid</button>`;
+                }
 
                 const typePill = row.type === 'debit'
                     ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-down-left"></i></span>`
                     : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-up-right"></i></span>`;
+
+                // Partial payment progress pill under Name if status is partial
+                const partialSubLine = (row.status === 'partial' && row.totalDue > 0)
+                    ? `<div class="pl-7 mt-1 flex items-center gap-2 text-[11px] text-sky-600 dark:text-sky-400 font-mono">
+                           <span>Paid ${formatCurrency(row.paidAmount)} / ${formatCurrency(row.totalDue)}</span>
+                           <div class="w-14 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                               <div class="h-full bg-sky-500 rounded-full" style="width: ${Math.min(100, Math.round((row.paidAmount / row.totalDue) * 100))}%"></div>
+                           </div>
+                       </div>`
+                    : '';
 
                 const remarksHtml = row.remarks
                     ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 pl-7"><i class="fa-regular fa-comment-dots text-[10px] mr-1 text-slate-400"></i>${escapeHtml(row.remarks)}</p>`
@@ -1640,11 +2027,14 @@
                 // Unpaid (Credit + Charge) cell display
                 let unpaidCellHtml = '<span class="text-slate-300 dark:text-slate-700">—</span>';
                 if (row.rowUnpaidTotal > 0) {
-                    const breakdownNote = (row.rowUnpaidCredit > 0 && row.rowUnpaidCharge > 0)
-                        ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${formatCurrency(row.rowUnpaidCredit)} + ${formatCurrency(row.rowUnpaidCharge)}</div>`
-                        : (row.rowUnpaidCredit === 0 && row.rowUnpaidCharge > 0
-                            ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">charge only</div>`
-                            : '');
+                    let breakdownNote = '';
+                    if (row.status === 'partial') {
+                        breakdownNote = `<div class="text-[10px] font-normal text-sky-600 dark:text-sky-400">paid: ${formatCurrency(row.paidAmount)}</div>`;
+                    } else if (row.rowUnpaidCredit > 0 && row.rowUnpaidCharge > 0) {
+                        breakdownNote = `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">${formatCurrency(row.rowUnpaidCredit)} + ${formatCurrency(row.rowUnpaidCharge)}</div>`;
+                    } else if (row.rowUnpaidCredit === 0 && row.rowUnpaidCharge > 0) {
+                        breakdownNote = `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">charge only</div>`;
+                    }
                     unpaidCellHtml = `
                         <span class="font-semibold text-amber-600 dark:text-amber-400">${formatCurrency(row.rowUnpaidTotal)}</span>
                         ${breakdownNote}
@@ -1653,8 +2043,15 @@
 
                 let actionTdHtml = '';
                 if (isAdmin) {
-                    const markPaidBtnHtml = row.status === 'unpaid'
-                        ? `<button type="button" onclick="markAsPaid(${row.originalIndex})" class="h-8 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white dark:hover:text-white border border-emerald-200/80 dark:border-emerald-800/60 font-semibold text-xs transition-all active:scale-90 inline-flex items-center justify-center gap-1 cursor-pointer" title="Mark as Paid">
+                    const partialPayBtnHtml = (row.status !== 'paid' && row.totalDue > 0)
+                        ? `<button type="button" onclick="openPartialPaymentModal(${row.originalIndex})" class="h-8 px-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-600 dark:hover:bg-sky-600 text-sky-700 dark:text-sky-400 hover:text-white dark:hover:text-white border border-sky-200/80 dark:border-sky-800/60 font-semibold text-xs transition-all active:scale-90 inline-flex items-center justify-center gap-1 cursor-pointer" title="Record Partial Payment">
+                                <i class="fa-solid fa-hand-holding-dollar text-[11px]"></i>
+                                <span>Partial</span>
+                           </button>`
+                        : '';
+
+                    const markPaidBtnHtml = row.status !== 'paid'
+                        ? `<button type="button" onclick="markAsPaid(${row.originalIndex})" class="h-8 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-600 dark:hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white dark:hover:text-white border border-emerald-200/80 dark:border-emerald-800/60 font-semibold text-xs transition-all active:scale-90 inline-flex items-center justify-center gap-1 cursor-pointer" title="Mark as Paid in Full">
                                 <i class="fa-solid fa-check text-[11px]"></i>
                                 <span>Paid</span>
                            </button>`
@@ -1663,6 +2060,7 @@
                     actionTdHtml = `
                         <td class="py-3.5 px-4 text-center whitespace-nowrap no-print">
                             <div class="flex items-center justify-center gap-1.5">
+                                ${partialPayBtnHtml}
                                 ${markPaidBtnHtml}
                                 <button onclick="openModal(${row.originalIndex})" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all active:scale-90 flex items-center justify-center cursor-pointer" title="Edit">
                                     <i class="fa-solid fa-pen text-xs"></i>
@@ -1683,6 +2081,7 @@
                             <span class="font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(row.name)}</span>
                             ${statusBadge}
                         </div>
+                        ${partialSubLine}
                         ${remarksHtml}
                     </td>
                     <td class="py-3.5 px-4 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
@@ -1703,7 +2102,7 @@
                     </td>
                     <td class="py-3.5 px-4 text-right font-mono font-bold text-teal-600 dark:text-teal-400 whitespace-nowrap tabular-nums">
                         <div>${formatCurrency(row.cashOnHand)}</div>
-                        ${row.rowCashOnHandDelta > 0 ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">+${formatCurrency(row.rowCashOnHandDelta)}</div>` : ''}
+                        ${row.rowCashOnHandDelta > 0 ? `<div class="text-[10px] font-normal text-slate-400 dark:text-slate-500">+${formatCurrency(row.rowCashOnHandDelta)}${row.status === 'partial' ? ' (partial)' : ''}</div>` : ''}
                     </td>
                     ${actionTdHtml}
                 `;
@@ -1740,10 +2139,10 @@
                 showNotification('No data available to export!', 'error');
                 return;
             }
-            let csvContent = "data:text/csv;charset=utf-8,Date,Name,Type,Amount,Charge,Status,Unpaid_Credit_Plus_Charge,Running_Balance,Balance_With_Unpaid,Cash_On_Hand,Remarks\n";
+            let csvContent = "data:text/csv;charset=utf-8,Date,Name,Type,Amount,Charge,Status,Paid_Amount,Unpaid_Credit_Plus_Charge,Running_Balance,Balance_With_Unpaid,Cash_On_Hand,Remarks\n";
             rows.forEach(tx => {
                 const remarks = tx.remarks ? tx.remarks.replace(/"/g, '""') : '';
-                csvContent += `"${tx.date}","${tx.name}","${tx.type}",${tx.amount},${tx.charge},"${tx.status}",${tx.rowUnpaidTotal},${tx.runningBalance},${tx.balanceWithUnpaid},${tx.cashOnHand},"${remarks}"\n`;
+                csvContent += `"${tx.date}","${tx.name}","${tx.type}",${tx.amount},${tx.charge},"${tx.status}",${tx.paidAmount},${tx.rowUnpaidTotal},${tx.runningBalance},${tx.balanceWithUnpaid},${tx.cashOnHand},"${remarks}"\n`;
             });
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
@@ -1775,7 +2174,7 @@
             if (notifTimeout) clearTimeout(notifTimeout);
             notifTimeout = setTimeout(() => {
                 notif.classList.add('translate-y-24', 'opacity-0');
-            }, 3000);
+            }, 3200);
         }
 
         function escapeHtml(str) {
