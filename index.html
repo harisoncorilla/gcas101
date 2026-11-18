@@ -198,6 +198,13 @@
                     <span id="toggleAnalyticsText">Hide Analytics</span>
                 </button>
 
+                <!-- Backup & Audit Log Drawer Button -->
+                <button onclick="openBackupAuditModal('backup')" id="backupAuditHeaderBtn" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center gap-2 cursor-pointer" title="JSON Backup, Restore & Audit Trail">
+                    <i class="fa-solid fa-shield-halved text-violet-500 text-xs"></i>
+                    <span>Backup & Audit</span>
+                    <span id="headerAuditCountBadge" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300">0</span>
+                </button>
+
                 <!-- Admin Mode Toggle -->
                 <button onclick="toggleAdminModal()" id="adminModeBtn" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
                     <span class="relative flex h-2 w-2">
@@ -219,7 +226,7 @@
 
                 <!-- Export CSV -->
                 <button onclick="exportData()" class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-xl font-medium text-xs transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-file-csv text-xs text-emerald-600"></i> Export
+                    <i class="fa-solid fa-file-csv text-xs text-emerald-600"></i> CSV
                 </button>
             </div>
         </div>
@@ -243,6 +250,12 @@
                 <div class="text-xs text-slate-600 dark:text-slate-300" id="smartInsightText">
                     Log into Admin Mode and add transactions to unlock real-time cash-flow insights.
                 </div>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <span id="lastBackupPill" class="text-[11px] font-medium text-slate-400 dark:text-slate-500 hidden md:inline">No backup yet</span>
+                <button id="quickJsonBackupBtn" onclick="exportJsonBackup()" class="hidden px-2.5 py-1 rounded-lg bg-violet-50 dark:bg-violet-950/70 hover:bg-violet-100 dark:hover:bg-violet-900/70 text-violet-700 dark:text-violet-300 border border-violet-200/70 dark:border-violet-800/60 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5" title="Quick Download JSON Backup (Admin Only)">
+                    <i class="fa-solid fa-download text-[10px]"></i> JSON Backup
+                </button>
             </div>
         </div>
 
@@ -513,8 +526,13 @@
                     <span class="text-xs font-display font-bold text-slate-700 dark:text-slate-200">Transaction Ledger</span>
                     <span id="visibleCountBadge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">0 records</span>
                 </div>
-                <div class="text-[11px] text-slate-400 hidden sm:block">
-                    Cash on Hand counts settled amounts & partial payments only; Unpaid reflects remaining balance due
+                <div class="flex items-center gap-3">
+                    <span class="text-[11px] text-slate-400 hidden md:block">
+                        Cash on Hand counts settled amounts & partial payments only
+                    </span>
+                    <button onclick="openBackupAuditModal('audit')" class="text-[11px] font-semibold text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-clock-rotate-left text-[10px]"></i> View Audit Trail
+                    </button>
                 </div>
             </div>
 
@@ -558,15 +576,238 @@
                     <i class="fa-solid fa-folder-open"></i>
                 </div>
                 <h3 class="text-base font-display font-bold text-slate-800 dark:text-slate-100">No transactions found</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Log into Admin Mode to add a new debit or cash-out record to the ledger.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">Log into Admin Mode to add a new debit or cash-out record, or restore data from a JSON backup file.</p>
                 <div class="mt-5 flex items-center justify-center gap-2.5 flex-wrap">
                     <button id="emptyAddBtn" onclick="openModal()" class="hidden inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm cursor-pointer">
                         <i class="fa-solid fa-plus"></i> Add Transaction
+                    </button>
+                    <button onclick="openBackupAuditModal('backup')" class="inline-flex items-center gap-2 bg-violet-50 dark:bg-violet-950/70 hover:bg-violet-100 dark:hover:bg-violet-900/70 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer">
+                        <i class="fa-solid fa-file-import"></i> Restore JSON Backup
                     </button>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- Backup & Audit Log Modal (Tabbed: JSON Backup/Restore + Searchable Audit Log) -->
+    <div id="backupAuditModal" onclick="if (event.target === this) closeBackupAuditModal()" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300 p-3 sm:p-4">
+        <div class="relative z-10 bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 transform scale-95 translate-y-4 transition-all duration-300 flex flex-col overflow-hidden" id="backupAuditContainer">
+            <!-- Header & Tab Switcher -->
+            <div class="relative z-20 px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-shield-halved text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-display font-bold text-slate-900 dark:text-white">Data Backup & Audit Center</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">JSON backup portability, disaster recovery & immutable activity trail</p>
+                    </div>
+                </div>
+                <div class="relative z-20 flex items-center gap-2 self-end sm:self-center">
+                    <div class="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-xl">
+                        <button type="button" onclick="switchBackupAuditTab('backup')" id="tabBtnBackup" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-database text-[11px]"></i> Backup & Restore
+                        </button>
+                        <button type="button" onclick="switchBackupAuditTab('audit')" id="tabBtnAudit" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left text-[11px]"></i> Audit Log
+                            <span id="modalAuditCountBadge" class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-300/60 dark:bg-slate-700 text-slate-700 dark:text-slate-200">0</span>
+                        </button>
+                    </div>
+                    <button type="button" id="closeBackupAuditBtn" onclick="closeBackupAuditModal()" aria-label="Close Data Backup and Audit Center" class="relative z-20 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-700/80 transition-all cursor-pointer shrink-0">
+                        <i class="fa-solid fa-xmark text-sm pointer-events-none"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+
+                <!-- TAB 1: JSON BACKUP & RESTORE -->
+                <div id="backupTabView" class="space-y-5">
+                    <!-- Admin Lock Notice (Shown in Viewer Mode) -->
+                    <div id="backupAdminLockedNotice" class="hidden p-6 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 text-center space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-lg shadow-2xs">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <div class="max-w-md mx-auto space-y-1">
+                            <h4 class="text-sm font-display font-bold text-slate-900 dark:text-white">Administrator Access Required</h4>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                JSON Backup exports and JSON Data Restores are restricted to <strong>Administrator Mode</strong> to protect financial integrity. You can still view the <strong>Audit Log</strong> tab in read-only mode.
+                            </p>
+                        </div>
+                        <div class="pt-1">
+                            <button type="button" onclick="closeBackupAuditModal(); toggleAdminModal();" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer">
+                                <i class="fa-solid fa-lock-open text-[11px]"></i> Unlock Admin Mode
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Admin-Only Backup & Restore Controls Wrapper -->
+                    <div id="backupAdminControlsWrapper" class="hidden space-y-5">
+                        <!-- Storage & Health Snapshot -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ledger Records</p>
+                                <p id="backupStatTxCount" class="text-base font-mono font-bold text-slate-800 dark:text-white mt-1">0</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Audit Events</p>
+                                <p id="backupStatAuditCount" class="text-base font-mono font-bold text-violet-600 dark:text-violet-400 mt-1">0</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Payload Size</p>
+                                <p id="backupStatSize" class="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1">0 KB</p>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Last Backup</p>
+                                <p id="backupStatLastTime" class="text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 mt-1.5 truncate">Never</p>
+                            </div>
+                        </div>
+
+                        <!-- Section A: Export Backup (JSON) -->
+                        <div class="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-violet-50/50 to-white dark:from-indigo-950/40 dark:via-violet-950/25 dark:to-slate-900 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-600 text-white">Export</span>
+                                    <h4 class="text-sm font-display font-bold text-slate-900 dark:text-white">Full JSON Snapshot Backup</h4>
+                                </div>
+                                <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                    Downloads a portable <code class="font-mono text-[11px] px-1 py-0.5 rounded bg-white/80 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400">.json</code> archive containing all transactions, partial payment progress, financial checksums, and complete audit logs.
+                                </p>
+                            </div>
+                            <button type="button" onclick="exportJsonBackup()" class="shrink-0 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-glow transition-all active:scale-95 flex items-center gap-2 cursor-pointer">
+                                <i class="fa-solid fa-file-export"></i> Download JSON Backup
+                            </button>
+                        </div>
+
+                        <!-- Section B: Import / Restore from JSON -->
+                        <div class="p-5 rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white">Import</span>
+                                        <h4 class="text-sm font-display font-bold text-slate-900 dark:text-white">Restore Ledger from JSON File</h4>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Upload a previously exported LedgerPro JSON backup file to restore or merge records.</p>
+                                </div>
+                                <span id="restoreAdminNotice" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60">
+                                    <i class="fa-solid fa-lock-open mr-1"></i> Admin Unlocked
+                                </span>
+                            </div>
+
+                            <!-- Drag & Drop / File Input Zone -->
+                            <div id="jsonDropzone" onclick="triggerJsonFilePicker()" ondragover="handleJsonDragOver(event)" ondragleave="handleJsonDragLeave(event)" ondrop="handleJsonDrop(event)" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-2xl p-6 text-center transition-all cursor-pointer bg-slate-50/70 dark:bg-slate-900/50 group">
+                                <input type="file" id="jsonBackupFileInput" accept=".json,application/json" onchange="handleJsonFileSelect(event)" class="hidden">
+                                <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-2.5 group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                                </div>
+                                <p class="text-xs font-semibold text-slate-800 dark:text-slate-100">Click to select a <span class="text-indigo-600 dark:text-indigo-400">.json</span> backup file or drag & drop here</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Supports LedgerPro v1/v2 backup archives and raw transaction JSON arrays</p>
+                            </div>
+
+                            <!-- Validation & Preview Card (Shown once a valid JSON file is parsed) -->
+                            <div id="restorePreviewCard" class="hidden p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 space-y-3.5">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex items-center gap-2.5">
+                                        <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base"></i>
+                                        <div>
+                                            <p id="restoreFileName" class="text-xs font-bold text-slate-900 dark:text-white">backup.json</p>
+                                            <p id="restoreFileMeta" class="text-[11px] text-slate-500 dark:text-slate-400">Validated LedgerPro Archive</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="clearPendingRestore()" class="text-[11px] font-semibold text-slate-500 hover:text-rose-600 cursor-pointer">Clear</button>
+                                </div>
+
+                                <!-- Summary Metrics from Backup -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center bg-white/80 dark:bg-slate-900/70 p-2.5 rounded-xl border border-emerald-200/50 dark:border-emerald-800/40">
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase text-slate-400">Transactions</p>
+                                        <p id="previewBackupTxCount" class="text-xs font-mono font-bold text-slate-800 dark:text-white mt-0.5">0</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase text-slate-400">Wallet Debit</p>
+                                        <p id="previewBackupDebit" class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">₱0.00</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase text-slate-400">Cash-Out</p>
+                                        <p id="previewBackupCredit" class="text-xs font-mono font-bold text-rose-600 dark:text-rose-400 mt-0.5">₱0.00</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-bold uppercase text-slate-400">Audit Logs</p>
+                                        <p id="previewBackupAuditCount" class="text-xs font-mono font-bold text-violet-600 dark:text-violet-400 mt-0.5">0</p>
+                                    </div>
+                                </div>
+
+                                <!-- Restore Mode Selection -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <label class="flex items-start gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-indigo-500 transition-all">
+                                        <input type="radio" name="restoreMode" value="replace" checked class="mt-0.5 accent-indigo-600">
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800 dark:text-slate-100">Replace Entire Ledger</p>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Overwrites current records with this backup snapshot.</p>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-indigo-500 transition-all">
+                                        <input type="radio" name="restoreMode" value="merge" class="mt-0.5 accent-indigo-600">
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800 dark:text-slate-100">Merge / Append Records</p>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Keeps existing entries and appends non-duplicate records.</p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between pt-1">
+                                    <label class="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                                        <input type="checkbox" id="restoreAuditLogsCheckbox" checked class="rounded accent-indigo-600">
+                                        <span>Include backup's Audit Log history</span>
+                                    </label>
+                                    <button type="button" onclick="executeJsonRestore()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-rotate-left"></i> Execute Restore
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: AUDIT LOG TRAIL -->
+                <div id="auditTabView" class="hidden space-y-4">
+                    <!-- Filter & Action Toolbar -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="auditSearchInput" oninput="renderAuditLogList()" placeholder="Filter audit log by action, account name, or detail..." class="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500">
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <select id="auditCategoryFilter" onchange="renderAuditLogList()" class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer">
+                                <option value="ALL">All Events</option>
+                                <option value="CREATE">Created Entries</option>
+                                <option value="UPDATE">Edited Entries</option>
+                                <option value="PARTIAL_PAYMENT">Partial Payments</option>
+                                <option value="STATUS_CHANGE">Status Changes</option>
+                                <option value="DELETE">Deletions</option>
+                                <option value="BACKUP">Backups & Restores</option>
+                                <option value="AUTH">Admin Auth</option>
+                            </select>
+                            <button type="button" onclick="exportAuditLogsCsv()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5" title="Download Audit Log CSV">
+                                <i class="fa-solid fa-download text-xs text-violet-500"></i> Export Log
+                            </button>
+                            <button type="button" id="clearAuditLogsBtn" onclick="promptClearAuditLogs()" class="hidden px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/70 text-rose-600 dark:text-rose-400 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5">
+                                <i class="fa-solid fa-trash-can text-xs"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Audit Timeline List -->
+                    <div id="auditLogListContainer" class="space-y-2.5 max-h-[52vh] overflow-y-auto pr-1">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Add/Edit Transaction Modal (Admin Only) -->
     <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
@@ -780,7 +1021,7 @@
                 </button>
             </div>
             <div id="adminLoginView" class="space-y-3">
-                <p class="text-xs text-slate-500 dark:text-slate-400">Enter administrator password to unlock adding, editing, partial payments, and status toggling.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Enter administrator password to unlock adding, editing, partial payments, and JSON restore.</p>
                 <input type="password" id="adminPasswordInput" onkeydown="if(event.key==='Enter') verifyAdminPassword()" placeholder="Enter admin password" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="flex justify-end gap-2 pt-2">
                     <button onclick="closeAdminModal()" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer">Cancel</button>
@@ -788,7 +1029,7 @@
                 </div>
             </div>
             <div id="adminLogoutView" class="hidden space-y-3">
-                <p class="text-xs text-slate-600 dark:text-slate-300">You are currently authenticated as an <strong>Administrator</strong>. You can record partial payments, edit entries, or settle full balances.</p>
+                <p class="text-xs text-slate-600 dark:text-slate-300">You are currently authenticated as an <strong>Administrator</strong>. You can record partial payments, edit entries, restore JSON backups, or settle full balances.</p>
                 <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
                     <button onclick="promptClearAllTransactions()" class="px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-semibold cursor-pointer">Clear Ledger</button>
                     <div class="flex gap-2">
@@ -806,10 +1047,14 @@
         <span id="notifText">Action successful!</span>
     </div>
 
-    <!-- JavaScript Application & Analytics Engine -->
+    <!-- JavaScript Application, Backup & Audit Log Engine -->
     <script>
         // Core State
         let transactions = JSON.parse(localStorage.getItem('ledger_transactions')) || [];
+        let auditLogs = JSON.parse(localStorage.getItem('ledger_audit_logs')) || [];
+        let lastBackupTimestamp = localStorage.getItem('ledger_last_backup') || null;
+        const MAX_AUDIT_ENTRIES = 500;
+
         let currentFilter = 'all';
         let currentTypeFilter = 'all';
         let sortAscending = true;
@@ -818,6 +1063,7 @@
         let isAutoCharge = true;
         let isAdmin = localStorage.getItem('ledger_is_admin') === 'true';
         let pendingConfirmAction = null;
+        let pendingRestorePayload = null;
 
         // Chart.js Instances
         let cashFlowChartInstance = null;
@@ -837,13 +1083,602 @@
             initTheme();
             setDefaultDate();
             updateUIMode();
+            updateBackupStatusUI();
             refreshAll();
             document.getElementById('printDate').textContent = new Date().toLocaleDateString('en-US', {
                 year: 'numeric', month: 'long', day: 'numeric'
             });
         });
 
-        // Theme Management
+        // Global Escape Key Handler for Open Modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const confirmModal = document.getElementById('confirmModal');
+                if (confirmModal && !confirmModal.classList.contains('pointer-events-none')) {
+                    closeConfirmModal();
+                    return;
+                }
+                const backupModal = document.getElementById('backupAuditModal');
+                if (backupModal && !backupModal.classList.contains('hidden')) {
+                    closeBackupAuditModal();
+                }
+                const txModal = document.getElementById('transactionModal');
+                if (txModal && !txModal.classList.contains('pointer-events-none')) {
+                    closeModal();
+                }
+                const partialModal = document.getElementById('partialPaymentModal');
+                if (partialModal && !partialModal.classList.contains('pointer-events-none')) {
+                    closePartialModal();
+                }
+                const adminModal = document.getElementById('adminModal');
+                if (adminModal && !adminModal.classList.contains('pointer-events-none')) {
+                    closeAdminModal();
+                }
+            }
+        });
+
+        // ==========================================
+        // AUDIT LOG ENGINE
+        // ==========================================
+        function recordAuditLog(action, summary, details = null) {
+            const entry = {
+                id: 'aud_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                timestamp: new Date().toISOString(),
+                actor: isAdmin ? 'Admin' : 'Viewer',
+                action, // CREATE | UPDATE | PARTIAL_PAYMENT | STATUS_CHANGE | DELETE | CLEAR_LEDGER | BACKUP_EXPORT | BACKUP_RESTORE | ADMIN_LOGIN | ADMIN_LOGOUT
+                summary,
+                details
+            };
+
+            auditLogs.unshift(entry);
+            if (auditLogs.length > MAX_AUDIT_ENTRIES) {
+                auditLogs = auditLogs.slice(0, MAX_AUDIT_ENTRIES);
+            }
+            localStorage.setItem('ledger_audit_logs', JSON.stringify(auditLogs));
+            updateBackupStatusUI();
+        }
+
+        function formatAuditTimestamp(isoStr) {
+            try {
+                const d = new Date(isoStr);
+                return d.toLocaleString('en-US', {
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            } catch {
+                return isoStr;
+            }
+        }
+
+        function getAuditBadgeMeta(action) {
+            const map = {
+                CREATE: { label: 'Created', icon: 'fa-plus', cls: 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border-emerald-200/70 dark:border-emerald-800/60' },
+                UPDATE: { label: 'Edited', icon: 'fa-pen', cls: 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-400 border-indigo-200/70 dark:border-indigo-800/60' },
+                PARTIAL_PAYMENT: { label: 'Partial Pay', icon: 'fa-hand-holding-dollar', cls: 'bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-400 border-sky-200/70 dark:border-sky-800/60' },
+                STATUS_CHANGE: { label: 'Status', icon: 'fa-arrows-rotate', cls: 'bg-teal-100 dark:bg-teal-950/80 text-teal-700 dark:text-teal-400 border-teal-200/70 dark:border-teal-800/60' },
+                DELETE: { label: 'Deleted', icon: 'fa-trash', cls: 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-400 border-rose-200/70 dark:border-rose-800/60' },
+                CLEAR_LEDGER: { label: 'Cleared', icon: 'fa-broom', cls: 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-400 border-rose-200/70 dark:border-rose-800/60' },
+                BACKUP_EXPORT: { label: 'JSON Export', icon: 'fa-file-export', cls: 'bg-violet-100 dark:bg-violet-950/80 text-violet-700 dark:text-violet-400 border-violet-200/70 dark:border-violet-800/60' },
+                BACKUP_RESTORE: { label: 'JSON Restore', icon: 'fa-rotate-left', cls: 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border-amber-200/70 dark:border-amber-800/60' },
+                ADMIN_LOGIN: { label: 'Admin Unlock', icon: 'fa-lock-open', cls: 'bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/70 dark:border-slate-700' },
+                ADMIN_LOGOUT: { label: 'Admin Lock', icon: 'fa-lock', cls: 'bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/70 dark:border-slate-700' }
+            };
+            return map[action] || { label: action, icon: 'fa-circle-info', cls: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' };
+        }
+
+        function renderAuditLogList() {
+            const container = document.getElementById('auditLogListContainer');
+            if (!container) return;
+
+            const search = (document.getElementById('auditSearchInput')?.value || '').toLowerCase();
+            const catFilter = document.getElementById('auditCategoryFilter')?.value || 'ALL';
+
+            const filtered = auditLogs.filter(item => {
+                const matchesCat = catFilter === 'ALL'
+                    || (catFilter === 'BACKUP' && (item.action === 'BACKUP_EXPORT' || item.action === 'BACKUP_RESTORE'))
+                    || (catFilter === 'AUTH' && (item.action === 'ADMIN_LOGIN' || item.action === 'ADMIN_LOGOUT'))
+                    || item.action === catFilter;
+
+                const detailStr = item.details ? JSON.stringify(item.details).toLowerCase() : '';
+                const matchesSearch = !search
+                    || item.summary.toLowerCase().includes(search)
+                    || item.action.toLowerCase().includes(search)
+                    || detailStr.includes(search);
+
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="py-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                        <i class="fa-solid fa-clipboard-list text-2xl text-slate-300 dark:text-slate-700 mb-2"></i>
+                        <p class="text-xs font-semibold text-slate-600 dark:text-slate-300">No audit log events match your filter</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Every transaction, payment, backup, and restore is tracked automatically.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const meta = getAuditBadgeMeta(item.action);
+                const detailsHtml = item.details
+                    ? `<div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-mono text-slate-500 dark:text-slate-400 break-all bg-slate-50/80 dark:bg-slate-900/60 px-2.5 py-1.5 rounded-lg">${escapeHtml(formatAuditDetails(item.details))}</div>`
+                    : '';
+
+                return `
+                    <div class="p-3.5 rounded-2xl bg-white dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 hover:border-violet-300 dark:hover:border-violet-700/70 transition-all">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.cls}">
+                                    <i class="fa-solid ${meta.icon} text-[9px]"></i> ${meta.label}
+                                </span>
+                                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">${escapeHtml(item.actor || 'System')}</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-400 dark:text-slate-500">${formatAuditTimestamp(item.timestamp)}</span>
+                        </div>
+                        <p class="text-xs font-medium text-slate-800 dark:text-slate-100 mt-1.5">${escapeHtml(item.summary)}</p>
+                        ${detailsHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatAuditDetails(details) {
+            if (typeof details === 'string') return details;
+            return Object.entries(details)
+                .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                .join(' • ');
+        }
+
+        function exportAuditLogsCsv() {
+            if (auditLogs.length === 0) {
+                showNotification('No audit logs available to export.', 'error');
+                return;
+            }
+            let csv = "data:text/csv;charset=utf-8,Timestamp,Actor,Action,Summary,Details\n";
+            auditLogs.forEach(log => {
+                const summary = (log.summary || '').replace(/"/g, '""');
+                const details = log.details ? JSON.stringify(log.details).replace(/"/g, '""') : '';
+                csv += `"${log.timestamp}","${log.actor}","${log.action}","${summary}","${details}"\n`;
+            });
+            const link = document.createElement('a');
+            link.setAttribute('href', encodeURI(csv));
+            link.setAttribute('download', `ledgerpro_audit_log_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification('Audit log exported as CSV!', 'success');
+        }
+
+        function promptClearAuditLogs() {
+            if (!isAdmin) {
+                showNotification('Administrator privileges required to clear audit logs.', 'error');
+                return;
+            }
+            openConfirmModal(
+                'Clear Audit Log History',
+                'This will remove all past audit trail records and log a fresh reset entry. Continue?',
+                () => {
+                    const clearedCount = auditLogs.length;
+                    auditLogs = [];
+                    recordAuditLog('CLEAR_LEDGER', `Cleared ${clearedCount} historical audit log entries`);
+                    renderAuditLogList();
+                    showNotification('Audit log history cleared.', 'info');
+                }
+            );
+        }
+
+        // ==========================================
+        // JSON BACKUP & RESTORE ENGINE
+        // ==========================================
+        function updateBackupStatusUI() {
+            const count = auditLogs.length;
+            const headerBadge = document.getElementById('headerAuditCountBadge');
+            const modalBadge = document.getElementById('modalAuditCountBadge');
+            if (headerBadge) headerBadge.textContent = count;
+            if (modalBadge) modalBadge.textContent = count;
+
+            // Admin restore notice, locked view & clear audit button
+            const lockedNotice = document.getElementById('backupAdminLockedNotice');
+            const controlsWrapper = document.getElementById('backupAdminControlsWrapper');
+            const restoreNotice = document.getElementById('restoreAdminNotice');
+            const clearAuditBtn = document.getElementById('clearAuditLogsBtn');
+
+            if (lockedNotice && controlsWrapper) {
+                if (isAdmin) {
+                    lockedNotice.classList.add('hidden');
+                    controlsWrapper.classList.remove('hidden');
+                } else {
+                    lockedNotice.classList.remove('hidden');
+                    controlsWrapper.classList.add('hidden');
+                }
+            }
+
+            if (restoreNotice) {
+                if (isAdmin) {
+                    restoreNotice.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/60';
+                    restoreNotice.innerHTML = '<i class="fa-solid fa-lock-open mr-1"></i> Admin Unlocked';
+                } else {
+                    restoreNotice.className = 'text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/60';
+                    restoreNotice.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Admin Mode required to restore';
+                }
+            }
+            if (clearAuditBtn) {
+                if (isAdmin) clearAuditBtn.classList.remove('hidden');
+                else clearAuditBtn.classList.add('hidden');
+            }
+        }
+
+        function exportJsonBackup() {
+            if (!isAdmin) {
+                showNotification('Administrator privileges required to export JSON backups.', 'error');
+                return;
+            }
+            const now = new Date();
+            const isoNow = now.toISOString();
+            const pad = (n) => String(n).padStart(2, '0');
+            const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+            const fileName = `ledgerpro_backup_${stamp}.json`;
+
+            // Record the export event first so the downloaded JSON includes the backup record
+            recordAuditLog('BACKUP_EXPORT', `Exported JSON backup (${transactions.length} transactions)`, {
+                fileName,
+                transactions: transactions.length
+            });
+
+            lastBackupTimestamp = isoNow;
+            localStorage.setItem('ledger_last_backup', lastBackupTimestamp);
+            updateBackupStatusUI();
+
+            const totalDebit = transactions.filter(t => t.type === 'debit').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+            const totalCredit = transactions.filter(t => t.type === 'credit').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+            const backupPayload = {
+                app: 'LedgerPro',
+                version: '2.0',
+                exportedAt: isoNow,
+                summary: {
+                    transactionCount: transactions.length,
+                    auditLogCount: auditLogs.length,
+                    totalDebit: Number(totalDebit.toFixed(2)),
+                    totalCredit: Number(totalCredit.toFixed(2))
+                },
+                transactions,
+                auditLogs
+            };
+
+            const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            renderAuditLogList();
+            showNotification(`JSON Backup downloaded (${transactions.length} records)!`, 'success');
+        }
+
+        function exportBackupJSON() {
+            return exportJsonBackup();
+        }
+
+        let backupAuditCloseTimer = null;
+
+        function openBackupAuditModal(defaultTab = 'backup') {
+            if (backupAuditCloseTimer) {
+                clearTimeout(backupAuditCloseTimer);
+                backupAuditCloseTimer = null;
+            }
+            updateBackupStatusUI();
+            const targetTab = (!isAdmin && defaultTab === 'backup') ? 'audit' : defaultTab;
+            switchBackupAuditTab(targetTab);
+            const modal = document.getElementById('backupAuditModal');
+            const container = document.getElementById('backupAuditContainer');
+            if (!modal || !container) return;
+
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+                container.classList.remove('scale-95', 'translate-y-4');
+                container.classList.add('scale-100', 'translate-y-0');
+            });
+        }
+
+        function closeBackupAuditModal() {
+            const modal = document.getElementById('backupAuditModal');
+            const container = document.getElementById('backupAuditContainer');
+            if (!modal) return;
+
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+            if (container) {
+                container.classList.remove('scale-100', 'translate-y-0');
+                container.classList.add('scale-95', 'translate-y-4');
+            }
+
+            if (backupAuditCloseTimer) clearTimeout(backupAuditCloseTimer);
+            backupAuditCloseTimer = setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = '';
+                modal.style.opacity = '';
+                modal.style.pointerEvents = '';
+                backupAuditCloseTimer = null;
+            }, 250);
+        }
+
+        // Drag & Drop + File Input Parsing for JSON Restore (Admin Only)
+        function triggerJsonFilePicker() {
+            if (!isAdmin) {
+                showNotification('Administrator privileges required to import JSON backups.', 'error');
+                return;
+            }
+            document.getElementById('jsonBackupFileInput').click();
+        }
+
+        function handleJsonDragOver(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const dz = document.getElementById('jsonDropzone');
+            dz.classList.add('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30');
+        }
+
+        function handleJsonDragLeave(e) {
+            e.preventDefault();
+            const dz = document.getElementById('jsonDropzone');
+            dz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30');
+        }
+
+        function handleJsonDrop(e) {
+            e.preventDefault();
+            handleJsonDragLeave(e);
+            if (!isAdmin) {
+                showNotification('Administrator privileges required to restore JSON backups.', 'error');
+                return;
+            }
+            const file = e.dataTransfer?.files?.[0];
+            if (file) processJsonBackupFile(file);
+        }
+
+        function handleJsonFileSelect(e) {
+            if (!isAdmin) {
+                e.target.value = '';
+                showNotification('Administrator privileges required to import JSON backups.', 'error');
+                return;
+            }
+            const file = e.target?.files?.[0];
+            if (file) processJsonBackupFile(file);
+        }
+
+        function handleRestoreFileSelect(e) {
+            return handleJsonFileSelect(e);
+        }
+
+        function switchBackupAuditTab(tab) {
+            const backupView = document.getElementById('backupTabView');
+            const auditView = document.getElementById('auditTabView');
+            const btnBackup = document.getElementById('tabBtnBackup');
+            const btnAudit = document.getElementById('tabBtnAudit');
+
+            if (tab === 'audit') {
+                backupView.classList.add('hidden');
+                auditView.classList.remove('hidden');
+                btnAudit.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-300 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5';
+                btnBackup.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer flex items-center gap-1.5';
+                renderAuditLogList();
+            } else {
+                auditView.classList.add('hidden');
+                backupView.classList.remove('hidden');
+                btnBackup.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs transition-all cursor-pointer flex items-center gap-1.5';
+                btnAudit.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all cursor-pointer flex items-center gap-1.5';
+                updateBackupStatusUI();
+            }
+        }
+
+        // Drag & Drop + File Input Parsing for JSON Restore
+        function handleJsonDragOver(e) {
+            e.preventDefault();
+            const dz = document.getElementById('jsonDropzone');
+            dz.classList.add('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30');
+        }
+
+        function handleJsonDragLeave(e) {
+            e.preventDefault();
+            const dz = document.getElementById('jsonDropzone');
+            dz.classList.remove('border-indigo-500', 'bg-indigo-50/40', 'dark:bg-indigo-950/30');
+        }
+
+        function handleJsonDrop(e) {
+            e.preventDefault();
+            handleJsonDragLeave(e);
+            const file = e.dataTransfer?.files?.[0];
+            if (file) processJsonBackupFile(file);
+        }
+
+        function handleJsonFileSelect(e) {
+            const file = e.target?.files?.[0];
+            if (file) processJsonBackupFile(file);
+        }
+
+        function normalizeImportedTransaction(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const date = typeof raw.date === 'string' && raw.date.trim() ? raw.date.trim() : new Date().toISOString().split('T')[0];
+            const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : 'Unnamed Entry';
+            const type = raw.type === 'credit' ? 'credit' : 'debit';
+            const amount = Math.max(0, Number(raw.amount) || 0);
+            const charge = Math.max(0, Number(raw.charge) || 0);
+            const validStatuses = ['paid', 'partial', 'unpaid'];
+            const status = validStatuses.includes(raw.status) ? raw.status : 'unpaid';
+            const totalDue = Number(((type === 'credit' ? amount : 0) + charge).toFixed(2));
+
+            let paidAmount = 0;
+            if (status === 'paid') paidAmount = totalDue;
+            else if (status === 'partial') paidAmount = Math.min(totalDue, Math.max(0, Number(raw.paidAmount) || 0));
+
+            return {
+                date,
+                name,
+                type,
+                amount,
+                charge,
+                status,
+                paidAmount,
+                remarks: typeof raw.remarks === 'string' ? raw.remarks.trim() : ''
+            };
+        }
+
+        function processJsonBackupFile(file) {
+            if (!isAdmin) {
+                showNotification('Administrator privileges required to process JSON backup files.', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    let rawTxList = null;
+                    let rawAuditList = [];
+                    let exportedAt = null;
+
+                    if (Array.isArray(parsed)) {
+                        rawTxList = parsed;
+                    } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.transactions)) {
+                        rawTxList = parsed.transactions;
+                        if (Array.isArray(parsed.auditLogs)) rawAuditList = parsed.auditLogs;
+                        exportedAt = parsed.exportedAt || null;
+                    } else {
+                        showNotification('Invalid JSON structure: missing transactions array.', 'error');
+                        return;
+                    }
+
+                    const normalizedTxs = rawTxList
+                        .map(normalizeImportedTransaction)
+                        .filter(Boolean);
+
+                    const totalDebit = normalizedTxs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0);
+                    const totalCredit = normalizedTxs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
+
+                    pendingRestorePayload = {
+                        fileName: file.name,
+                        exportedAt,
+                        transactions: normalizedTxs,
+                        auditLogs: rawAuditList
+                    };
+
+                    document.getElementById('restoreFileName').textContent = file.name;
+                    document.getElementById('restoreFileMeta').textContent = exportedAt
+                        ? `Exported on ${formatAuditTimestamp(exportedAt)}`
+                        : 'Valid JSON transaction dataset';
+                    document.getElementById('previewBackupTxCount').textContent = normalizedTxs.length;
+                    document.getElementById('previewBackupDebit').textContent = formatCurrency(totalDebit);
+                    document.getElementById('previewBackupCredit').textContent = formatCurrency(totalCredit);
+                    document.getElementById('previewBackupAuditCount').textContent = rawAuditList.length;
+
+                    document.getElementById('restorePreviewCard').classList.remove('hidden');
+                    showNotification(`Parsed ${normalizedTxs.length} records from ${file.name}`, 'info');
+                } catch (err) {
+                    showNotification('Failed to parse JSON file. Ensure it is valid JSON.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearPendingRestore() {
+            pendingRestorePayload = null;
+            document.getElementById('jsonBackupFileInput').value = '';
+            document.getElementById('restorePreviewCard').classList.add('hidden');
+        }
+
+        function executeJsonRestore() {
+            if (!isAdmin) {
+                showNotification('Unlock Admin Mode first to restore JSON backups.', 'error');
+                closeBackupAuditModal();
+                toggleAdminModal();
+                return;
+            }
+            if (!pendingRestorePayload) {
+                showNotification('Please select a valid JSON backup file first.', 'error');
+                return;
+            }
+
+            const mode = document.querySelector('input[name="restoreMode"]:checked')?.value || 'replace';
+            const includeAudit = document.getElementById('restoreAuditLogsCheckbox').checked;
+            const payload = pendingRestorePayload;
+
+            const actionTitle = mode === 'replace' ? 'Replace Entire Ledger?' : 'Merge Backup Records?';
+            const actionDesc = mode === 'replace'
+                ? `This will overwrite your current ${transactions.length} transactions with ${payload.transactions.length} transactions from "${payload.fileName}".`
+                : `This will keep your existing ${transactions.length} transactions and append non-duplicate records from "${payload.fileName}".`;
+
+            openConfirmModal(actionTitle, actionDesc, () => {
+                const previousCount = transactions.length;
+                let addedCount = 0;
+
+                if (mode === 'replace') {
+                    transactions = [...payload.transactions];
+                    addedCount = transactions.length;
+                    if (includeAudit && Array.isArray(payload.auditLogs) && payload.auditLogs.length > 0) {
+                        auditLogs = [...payload.auditLogs];
+                    }
+                } else {
+                    const existingSignatures = new Set(
+                        transactions.map(t => `${t.date}|${t.name}|${t.type}|${t.amount}|${t.charge}|${t.status}|${t.paidAmount}|${t.remarks}`)
+                    );
+                    payload.transactions.forEach(tx => {
+                        const sig = `${tx.date}|${tx.name}|${tx.type}|${tx.amount}|${tx.charge}|${tx.status}|${tx.paidAmount}|${tx.remarks}`;
+                        if (!existingSignatures.has(sig)) {
+                            transactions.push(tx);
+                            existingSignatures.add(sig);
+                            addedCount++;
+                        }
+                    });
+
+                    if (includeAudit && Array.isArray(payload.auditLogs)) {
+                        const existingAuditIds = new Set(auditLogs.map(a => a.id));
+                        payload.auditLogs.forEach(log => {
+                            if (log && log.id && !existingAuditIds.has(log.id)) {
+                                auditLogs.push(log);
+                            }
+                        });
+                        auditLogs.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+                        if (auditLogs.length > MAX_AUDIT_ENTRIES) auditLogs = auditLogs.slice(0, MAX_AUDIT_ENTRIES);
+                    }
+                }
+
+                recordAuditLog(
+                    'BACKUP_RESTORE',
+                    mode === 'replace'
+                        ? `Restored ${transactions.length} transactions (replaced ${previousCount}) from ${payload.fileName}`
+                        : `Merged ${addedCount} new transactions (${payload.transactions.length - addedCount} duplicates skipped) from ${payload.fileName}`,
+                    { mode, fileName: payload.fileName, resultingTotal: transactions.length }
+                );
+
+                clearPendingRestore();
+                saveAndRender();
+                updateBackupStatusUI();
+                closeBackupAuditModal();
+                showNotification(
+                    mode === 'replace'
+                        ? `Ledger restored (${transactions.length} records)!`
+                        : `Merged ${addedCount} new records into ledger!`,
+                    'success'
+                );
+            });
+        }
+
+        // ==========================================
+        // THEME & UI HELPERS
+        // ==========================================
         function initTheme() {
             const savedTheme = localStorage.getItem('ledger_theme');
             if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -915,7 +1750,6 @@
         }
 
         // Partial Payment Computation Helper
-        // Computes total receivable due, paid principal, paid fee, and remaining unpaid balances
         function getTxPaymentBreakdown(tx) {
             const creditVal = tx.type === 'credit' ? (Number(tx.amount) || 0) : 0;
             const chargeVal = Number(tx.charge) || 0;
@@ -931,7 +1765,6 @@
                 paidAmount = 0;
             }
 
-            // Settle service charges first from partial payments, then apply remainder to cash-out principal
             const paidCharge = Number(Math.min(chargeVal, paidAmount).toFixed(2));
             const paidCredit = Number(Math.min(creditVal, Math.max(0, paidAmount - paidCharge)).toFixed(2));
 
@@ -1017,8 +1850,10 @@
             if (pass === 'c2e3d99Q.123') {
                 isAdmin = true;
                 localStorage.setItem('ledger_is_admin', 'true');
+                recordAuditLog('ADMIN_LOGIN', 'Unlocked Administrator Mode');
                 closeAdminModal();
                 updateUIMode();
+                updateBackupStatusUI();
                 refreshAll();
                 showNotification('Administrator mode unlocked!', 'success');
             } else {
@@ -1027,10 +1862,13 @@
         }
 
         function logoutAdmin() {
+            recordAuditLog('ADMIN_LOGOUT', 'Locked Administrator Mode (switched to Viewer)');
             isAdmin = false;
             localStorage.setItem('ledger_is_admin', 'false');
+            clearPendingRestore();
             closeAdminModal();
             updateUIMode();
+            updateBackupStatusUI();
             refreshAll();
             showNotification('Switched to Viewer Mode.', 'info');
         }
@@ -1039,6 +1877,7 @@
             const addBtn = document.getElementById('addTxBtn');
             const emptyAddBtn = document.getElementById('emptyAddBtn');
             const printReportBtn = document.getElementById('printReportBtn');
+            const quickJsonBackupBtn = document.getElementById('quickJsonBackupBtn');
             const actionHeaderCol = document.getElementById('actionHeaderCol');
             const footActionSpacer = document.getElementById('footActionSpacer');
             const adminBtnText = document.getElementById('adminBtnText');
@@ -1050,6 +1889,7 @@
                 addBtn.classList.remove('hidden');
                 emptyAddBtn.classList.remove('hidden');
                 printReportBtn.classList.remove('hidden');
+                if (quickJsonBackupBtn) quickJsonBackupBtn.classList.remove('hidden');
                 actionHeaderCol.classList.remove('hidden');
                 footActionSpacer.classList.remove('hidden');
                 adminBtnText.textContent = 'Admin Mode';
@@ -1060,6 +1900,7 @@
                 addBtn.classList.add('hidden');
                 emptyAddBtn.classList.add('hidden');
                 printReportBtn.classList.add('hidden');
+                if (quickJsonBackupBtn) quickJsonBackupBtn.classList.add('hidden');
                 actionHeaderCol.classList.add('hidden');
                 footActionSpacer.classList.add('hidden');
                 adminBtnText.textContent = 'Viewer Mode';
@@ -1239,10 +2080,29 @@
             };
 
             if (editIdx > -1) {
+                const oldTx = transactions[editIdx];
                 transactions[editIdx] = newTx;
+                recordAuditLog(
+                    'UPDATE',
+                    `Edited ${newTx.type === 'debit' ? 'Wallet Debit' : 'Cash-Out'} for "${newTx.name}" (${formatCurrency(newTx.amount)})`,
+                    {
+                        before: `${oldTx.date} | ${formatCurrency(oldTx.amount)} | fee ${formatCurrency(oldTx.charge)} | ${oldTx.status}`,
+                        after: `${newTx.date} | ${formatCurrency(newTx.amount)} | fee ${formatCurrency(newTx.charge)} | ${newTx.status}`
+                    }
+                );
                 showNotification('Transaction updated!', 'success');
             } else {
                 transactions.push(newTx);
+                recordAuditLog(
+                    'CREATE',
+                    `Added ${newTx.type === 'debit' ? 'Wallet Debit' : 'Cash-Out'} for "${newTx.name}" (${formatCurrency(newTx.amount)})`,
+                    {
+                        date: newTx.date,
+                        charge: formatCurrency(newTx.charge),
+                        status: newTx.status,
+                        paidAmount: formatCurrency(newTx.paidAmount)
+                    }
+                );
                 showNotification('Transaction added!', 'success');
             }
 
@@ -1377,6 +2237,17 @@
                 tx.remarks = tx.remarks ? `${tx.remarks} | ${note}` : note;
             }
 
+            recordAuditLog(
+                'PARTIAL_PAYMENT',
+                `Recorded partial payment of ${formatCurrency(payNow)} for "${tx.name}"`,
+                {
+                    paidNow: formatCurrency(payNow),
+                    cumulativePaid: `${formatCurrency(newCumulativePaid)} / ${formatCurrency(breakdown.totalDue)}`,
+                    remainingUnpaid: formatCurrency(newRemaining),
+                    resultingStatus: tx.status
+                }
+            );
+
             saveAndRender();
             closePartialModal();
 
@@ -1395,8 +2266,14 @@
             const tx = transactions[index];
             if (tx && tx.status !== 'paid') {
                 const breakdown = getTxPaymentBreakdown(tx);
+                const prevStatus = tx.status;
                 tx.status = 'paid';
                 tx.paidAmount = breakdown.totalDue;
+                recordAuditLog(
+                    'STATUS_CHANGE',
+                    `Marked "${tx.name}" (${tx.date}) as PAID in full`,
+                    { from: prevStatus, to: 'paid', settledAmount: formatCurrency(breakdown.totalDue) }
+                );
                 saveAndRender();
                 showNotification('Transaction marked as PAID in full!', 'success');
             }
@@ -1410,6 +2287,7 @@
             const tx = transactions[index];
             if (!tx) return;
             const breakdown = getTxPaymentBreakdown(tx);
+            const prevStatus = tx.status;
             if (tx.status === 'paid') {
                 tx.status = 'unpaid';
                 tx.paidAmount = 0;
@@ -1417,6 +2295,11 @@
                 tx.status = 'paid';
                 tx.paidAmount = breakdown.totalDue;
             }
+            recordAuditLog(
+                'STATUS_CHANGE',
+                `Toggled "${tx.name}" (${tx.date}) status from ${prevStatus.toUpperCase()} to ${tx.status.toUpperCase()}`,
+                { amount: formatCurrency(tx.amount), charge: formatCurrency(tx.charge) }
+            );
             saveAndRender();
             showNotification(`Marked as ${tx.status.toUpperCase()}`, 'success');
         }
@@ -1426,10 +2309,18 @@
                 showNotification('Access denied. Administrator privileges required.', 'error');
                 return;
             }
+            const tx = transactions[index];
             openConfirmModal(
                 'Delete Transaction',
                 'Are you sure you want to delete this transaction permanently?',
                 () => {
+                    if (tx) {
+                        recordAuditLog(
+                            'DELETE',
+                            `Deleted ${tx.type === 'debit' ? 'Wallet Debit' : 'Cash-Out'} for "${tx.name}" (${formatCurrency(tx.amount)})`,
+                            { date: tx.date, charge: formatCurrency(tx.charge), status: tx.status }
+                        );
+                    }
                     transactions.splice(index, 1);
                     saveAndRender();
                     showNotification('Transaction deleted.', 'info');
@@ -1444,6 +2335,8 @@
                 'Clear Entire Ledger',
                 'This will permanently remove all recorded transactions. This action cannot be undone.',
                 () => {
+                    const count = transactions.length;
+                    recordAuditLog('CLEAR_LEDGER', `Cleared all ${count} transactions from the ledger`);
                     transactions = [];
                     saveAndRender();
                     showNotification('All transactions cleared.', 'info');
@@ -1453,6 +2346,7 @@
 
         function saveAndRender() {
             localStorage.setItem('ledger_transactions', JSON.stringify(transactions));
+            updateBackupStatusUI();
             refreshAll();
         }
 
@@ -1523,7 +2417,6 @@
 
         // Master Computation & Render Pipeline
         function refreshAll() {
-            // 1. Build chronologically sorted ledger rows while preserving original array index
             const indexed = transactions.map((tx, idx) => ({ originalIndex: idx, ...tx }));
             indexed.sort((a, b) => {
                 if (a.date === b.date) return a.originalIndex - b.originalIndex;
@@ -1557,7 +2450,6 @@
                 const debitVal = tx.type === 'debit' ? tx.amount : 0;
                 const creditVal = tx.type === 'credit' ? tx.amount : 0;
 
-                // Compute exact partial/paid/unpaid breakdown for this transaction
                 const breakdown = getTxPaymentBreakdown(tx);
 
                 if (tx.type === 'debit') {
@@ -1567,14 +2459,12 @@
                 } else {
                     totalCredit += creditVal;
                     creditCount++;
-                    // Only the paid or partially paid cash-out principal is counted in Paid Cash-Out
                     paidCredit += breakdown.paidCredit;
                     unpaidCreditAmount += breakdown.unpaidCredit;
                     if (creditVal > maxCredit.amount) maxCredit = { amount: creditVal, name: tx.name };
                 }
 
                 totalCharges += tx.charge;
-                // Only paid or partially paid charges are counted in Charges Gained
                 chargesGained += breakdown.paidCharge;
                 unpaidCharges += breakdown.unpaidCharge;
                 totalUnpaidWithCharge += breakdown.unpaidTotal;
@@ -1589,7 +2479,6 @@
                 currentBalanceTracker += (debitVal - creditVal);
                 const balanceWithUnpaid = currentBalanceTracker + totalUnpaidWithCharge;
 
-                // Cash on Hand counts ONLY the settled/partially paid amount (paidCredit + paidCharge)
                 const rowCashOnHandDelta = breakdown.paidAmount;
                 cashOnHandTracker += rowCashOnHandDelta;
 
@@ -1597,7 +2486,6 @@
                     peakBalance = { amount: currentBalanceTracker, date: tx.date };
                 }
 
-                // Entity tracking
                 if (!accountStats[tx.name]) {
                     accountStats[tx.name] = { name: tx.name, volume: 0, fees: 0, unpaid: 0, count: 0 };
                 }
@@ -1633,10 +2521,8 @@
 
             const projectedNetBalance = currentBalanceTracker + totalUnpaidWithCharge;
 
-            // Update Month Dropdown & Datalist
             updateFilterOptions(monthsSet, namesSet);
 
-            // 2. Animate KPI Cards
             animateValue('cardTotalDebit', prevKpiValues.debit, totalDebit);
             animateValue('cardTotalCredit', prevKpiValues.credit, totalCredit);
             animateValue('cardTotalCharges', prevKpiValues.charges, totalCharges);
@@ -1652,7 +2538,6 @@
             const netBalanceEl = document.getElementById('cardNetBalance');
             netBalanceEl.className = `text-xl font-mono font-bold mt-1.5 tabular-nums ${currentBalanceTracker >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`;
 
-            // Sub-metrics on KPI cards
             const totalVolume = totalDebit + totalCredit;
             const debitShare = totalVolume > 0 ? Math.round((totalDebit / totalVolume) * 100) : 0;
             const creditShare = totalVolume > 0 ? (100 - debitShare) : 0;
@@ -1667,7 +2552,6 @@
             document.getElementById('collectionProgressBar').style.width = `${collectionRate}%`;
             document.getElementById('projectedBalanceLabel').textContent = formatCurrency(projectedNetBalance);
 
-            // 3. Update Benchmarks & Insights
             document.getElementById('statMaxDebit').textContent = formatCurrency(maxDebit.amount);
             document.getElementById('statMaxDebitName').textContent = maxDebit.name;
             document.getElementById('statMaxCredit').textContent = formatCurrency(maxCredit.amount);
@@ -1697,7 +2581,6 @@
             renderTopAccounts(accountStats);
             renderCharts(calculatedChronological, totalDebit, paidCredit, chargesGained, totalUnpaidWithCharge);
 
-            // Store calculated rows globally for quick filtering/sorting
             window._calculatedRows = calculatedChronological;
             renderTable();
         }
@@ -1729,7 +2612,7 @@
         function updateSmartInsight({ totalCount, unpaidCreditAmount, unpaidCharges, totalUnpaidWithCharge, unsettledCount, projectedNetBalance }) {
             const el = document.getElementById('smartInsightText');
             if (totalCount === 0) {
-                el.innerHTML = 'Ledger is currently empty. Log into <strong>Admin Mode</strong> to add your first entry.';
+                el.innerHTML = 'Ledger is currently empty. Log into <strong>Admin Mode</strong> to add your first entry or restore a JSON backup.';
                 return;
             }
             const parts = [];
@@ -1788,7 +2671,6 @@
             const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.18)';
             const tickColor = isDark ? '#94a3b8' : '#64748b';
 
-            // Group data by Daily or Monthly
             const grouped = {};
             chronologicalRows.forEach(row => {
                 const key = chartGranularity === 'monthly' ? row.date.slice(0, 7) : row.date;
@@ -1805,7 +2687,6 @@
             const creditSeries = labels.map(k => grouped[k].credit);
             const balanceSeries = labels.map(k => grouped[k].balance);
 
-            // 1. Cash-Flow & Running Balance Combo Chart
             const ctx1 = document.getElementById('cashFlowChart').getContext('2d');
             if (cashFlowChartInstance) cashFlowChartInstance.destroy();
 
@@ -1895,7 +2776,6 @@
                 }
             });
 
-            // 2. Distribution Doughnut Chart
             const ctx2 = document.getElementById('distributionChart').getContext('2d');
             if (distributionChartInstance) distributionChartInstance.destroy();
 
@@ -2010,7 +2890,6 @@
                     ? `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-down-left"></i></span>`
                     : `<span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-rose-50 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 text-[10px] shrink-0"><i class="fa-solid fa-arrow-up-right"></i></span>`;
 
-                // Partial payment progress pill under Name if status is partial
                 const partialSubLine = (row.status === 'partial' && row.totalDue > 0)
                     ? `<div class="pl-7 mt-1 flex items-center gap-2 text-[11px] text-sky-600 dark:text-sky-400 font-mono">
                            <span>Paid ${formatCurrency(row.paidAmount)} / ${formatCurrency(row.totalDue)}</span>
@@ -2024,7 +2903,6 @@
                     ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 pl-7"><i class="fa-regular fa-comment-dots text-[10px] mr-1 text-slate-400"></i>${escapeHtml(row.remarks)}</p>`
                     : '';
 
-                // Unpaid (Credit + Charge) cell display
                 let unpaidCellHtml = '<span class="text-slate-300 dark:text-slate-700">—</span>';
                 if (row.rowUnpaidTotal > 0) {
                     let breakdownNote = '';
@@ -2109,7 +2987,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Populate Footer Subtotals
             document.getElementById('footTotalDebit').textContent = formatCurrency(subDebit);
             document.getElementById('footTotalCredit').textContent = formatCurrency(subCredit);
             document.getElementById('footTotalCharges').textContent = formatCurrency(subCharges);
